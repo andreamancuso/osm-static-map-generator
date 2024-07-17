@@ -1,0 +1,1 @@
+# osm-static-map-generator
