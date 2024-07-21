@@ -38,21 +38,19 @@ double meterToPixel(double meter, int zoom, double lat) {
     return meter / meterPerPixel;
 }
 
-TileDescriptor::TileDescriptor(int id) {
-    m_id = id;
-};
+TileDescriptor::TileDescriptor(int id) : m_id(id) {};
 
 TileDescriptor::~TileDescriptor() {
     // not entirely sure that's how it's done
-    if (m_data != nullptr) {
+    if (m_data) {
         free((void*)m_data);
     }
 
-    if (m_clippedPix != nullptr) {
+    if (m_clippedPix) {
         pixFreeData(m_clippedPix);
     }
 
-    if (m_rawPix != nullptr) {
+    if (m_rawPix) {
         pixFreeData(m_rawPix);
     }
 }
@@ -63,6 +61,11 @@ void TileDescriptor::HandleSuccess(emscripten_fetch_t *fetch) {
     m_status = fetch->status;
     
     m_data = malloc(fetch->numBytes);
+    if (m_data == nullptr) {
+        // Handle memory allocation failure
+        m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
+        return;
+    }
     memcpy((void*)m_data, fetch->data, fetch->numBytes);
 
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, true);

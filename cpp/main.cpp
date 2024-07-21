@@ -19,39 +19,49 @@ class WasmRunner {
         std::unordered_map<int, std::unique_ptr<MapGenerator>> jobs;
 
     public:
-        WasmRunner() {}
+        WasmRunner() = default;
 
         void run() {
             
         }
 
         int GenerateMap(const json& options) {
-            jobCounter++;
+            try {
+                jobCounter++;
 
-            MapGeneratorOptions mapGeneratorOptions(options);
+                MapGeneratorOptions mapGeneratorOptions(options);
 
-            jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, [](void* data, size_t numBytes) {
-                EM_ASM_ARGS(
-                    { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
-                    data,
-                    numBytes
-                );
-            });
+                jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, [](void* data, size_t numBytes) {
+                    EM_ASM_ARGS(
+                        { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
+                        data,
+                        numBytes
+                    );
+                });
 
-            int zoom = options["zoom"].template get<int>();
-            double centerX = options["center"]["x"].template get<double>();
-            double centerY = options["center"]["y"].template get<double>();
+                int zoom = options["zoom"].template get<int>();
+                double centerX = options["center"]["x"].template get<double>();
+                double centerY = options["center"]["y"].template get<double>();
 
-            jobs[jobCounter]->Render(std::make_tuple(centerX, centerY), zoom);
+                jobs[jobCounter]->Render(std::make_tuple(centerX, centerY), zoom);
 
-            return jobCounter;
+                return jobCounter;
+            } catch (const std::exception& e) {
+                printf("Error: %s\n", e.what());
+                return -1;
+            }
         }
 };
 
 static std::unique_ptr<WasmRunner> pRunner = std::make_unique<WasmRunner>();
 
 int generateMap(const std::string& optionsAsString) {
-    return pRunner->GenerateMap(json::parse(optionsAsString));
+    try {
+       return pRunner->GenerateMap(json::parse(optionsAsString));
+    } catch (const std::exception& e) {
+        printf("Error: %s\n", e.what());
+        return -1;
+    }
 }
 
 EMSCRIPTEN_BINDINGS(my_module) {

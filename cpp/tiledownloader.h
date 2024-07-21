@@ -10,4 +10,4 @@ void downloadSucceeded(emscripten_fetch_t *fetch);
 
 void downloadFailed(emscripten_fetch_t *fetch);
 
-void download(TileDescriptor* tileDescriptor);
+void downloadTile(TileDescriptor* tileDescriptor);

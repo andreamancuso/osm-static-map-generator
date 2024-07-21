@@ -71,6 +71,10 @@ void MapGenerator::Render(std::tuple<double, double> center, int zoom) {
         m_zoom = m_zoomRangeMax;
     }
 
+    if (m_zoom < m_zoomRangeMin) {
+        m_zoom = m_zoomRangeMin;
+    }
+
     m_centerX = lonToX(std::get<0>(center), m_zoom);
     m_centerY = latToY(std::get<1>(center), m_zoom);
 
@@ -138,7 +142,7 @@ void MapGenerator::DownloadTiles() {
     }
 
     for (auto& tileDescriptor : m_tileDescriptors) {
-        download(tileDescriptor.get());
+        downloadTile(tileDescriptor.get());
     }
 };
 
@@ -168,25 +172,24 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
 };
 
 bool MapGenerator::PrepareTile(TileDescriptor* tileDescriptor) {
-    auto rawPix = pixReadMemPng((l_uint8*) tileDescriptor->m_data, tileDescriptor->m_numBytes);
+    auto initialRawPix = pixReadMemPng((l_uint8*) tileDescriptor->m_data, tileDescriptor->m_numBytes);
 
-    if (!rawPix) {
+    if (!initialRawPix) {
         return false;
     }
 
-    int rawPixDepth = pixGetDepth(rawPix);
+    int rawPixDepth = pixGetDepth(initialRawPix);
 
     if (rawPixDepth == 4) {
-        tileDescriptor->m_rawPix = pixConvert8To32(pixConvert4To8(rawPix, TRUE));
+        tileDescriptor->m_rawPix = pixConvert8To32(pixConvert4To8(initialRawPix, TRUE));
     } else if (rawPixDepth == 8) {
-        tileDescriptor->m_rawPix = pixConvert8To32(rawPix);
+        tileDescriptor->m_rawPix = pixConvert8To32(initialRawPix);
     } else {
-        tileDescriptor->m_rawPix = pixClone(rawPix);
+        tileDescriptor->m_rawPix = pixClone(initialRawPix);
     }
     
     int tileWidth = pixGetWidth(tileDescriptor->m_rawPix);
     int tileHeight = pixGetHeight(tileDescriptor->m_rawPix);
-    int depth = pixGetDepth(tileDescriptor->m_rawPix);
 
     int x = std::get<0>(tileDescriptor->m_box);
     int y = std::get<1>(tileDescriptor->m_box);
@@ -205,7 +208,7 @@ bool MapGenerator::PrepareTile(TileDescriptor* tileDescriptor) {
     BOX* box = boxCreate(dx, dy, w, h);
     tileDescriptor->m_clippedPix = pixClipRectangle(tileDescriptor->m_rawPix, box, nullptr);
 
-    pixFreeData(rawPix);
+    pixFreeData(initialRawPix);
 
     return true;
 };
