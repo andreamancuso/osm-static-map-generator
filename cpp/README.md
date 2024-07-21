@@ -1,0 +1,4 @@
+- Build the WASM:
+  - `cd cpp`
+  - `cmake -S . -B build -GNinja`
+  - `cmake --build ./build --target osmStaticMapGenerator`

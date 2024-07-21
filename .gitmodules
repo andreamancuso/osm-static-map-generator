@@ -1,0 +1,9 @@
+[submodule "cpp/deps/vcpkg"]
+	path = cpp/deps/vcpkg
+	url = https://github.com/microsoft/vcpkg.git
+[submodule "cpp/deps/emscripten"]
+	path = cpp/deps/emscripten
+	url = https://github.com/emscripten-core/emscripten
+[submodule "cpp/deps/leptonica"]
+	path = cpp/deps/leptonica
+	url = https://github.com/DanBloomberg/leptonica.git
