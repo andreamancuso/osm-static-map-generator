@@ -47,7 +47,7 @@ if (DEFINED EMSCRIPTEN)
     # target_include_directories(osmStaticMapGenerator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 	set_target_properties(osmStaticMapGenerator PROPERTIES COMPILE_FLAGS "-O0 -Wall -Wformat -s DISABLE_EXCEPTION_CATCHING=0")
-    set_target_properties(osmStaticMapGenerator PROPERTIES LINK_FLAGS "--no-heap-copy -O0 -lembind -lhtml5.js -lhtml5_webgl.js -lglfw.js -s ENVIRONMENT='web,worker' -s MODULARIZE=1 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -sFETCH -s NO_EXIT_RUNTIME=0 -s STANDALONE_WASM=0 -s EXIT_RUNTIME=1 -s ASSERTIONS=1 -s STACK_OVERFLOW_CHECK=2 -s DISABLE_EXCEPTION_CATCHING=0 -sPTHREAD_POOL_SIZE_STRICT=2 -sPTHREAD_POOL_SIZE=2 -sALLOW_BLOCKING_ON_MAIN_THREAD=1 -s SINGLE_FILE=1 ${CMAKE_CURRENT_SOURCE_DIR}/build/vcpkg_installed/wasm32-emscripten/lib/libcoro.a")
+    set_target_properties(osmStaticMapGenerator PROPERTIES LINK_FLAGS "--no-heap-copy -O0 -lembind -lhtml5.js -lhtml5_webgl.js -lglfw.js -s ENVIRONMENT='web' -s MODULARIZE=1 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -sFETCH -s NO_EXIT_RUNTIME=1 -s STANDALONE_WASM=0 -s EXIT_RUNTIME=0 -s ASSERTIONS=1 -s STACK_OVERFLOW_CHECK=2 -s DISABLE_EXCEPTION_CATCHING=0 -s SINGLE_FILE=1 ${CMAKE_CURRENT_SOURCE_DIR}/build/vcpkg_installed/wasm32-emscripten/lib/libcoro.a")
     set_target_properties(osmStaticMapGenerator PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../ts/src/lib/wasm)
     target_link_libraries(osmStaticMapGenerator PRIVATE nlohmann_json::nlohmann_json)
 endif()
