@@ -67,11 +67,16 @@ struct TileDescriptor {
     std::tuple<int, int, int, int> m_box;
     MapGenerator* m_mapGeneratorPtr;
     std::optional<bool> m_success;
-    const char* m_data;
+    void* m_data;
     int m_numBytes;
     unsigned short m_status;
 
+    void* m_slicedTileData;
+    int m_positionTop;
+    int m_positionLeft;
+
     TileDescriptor(int id);
+    ~TileDescriptor();
 
     void HandleSuccess(emscripten_fetch_t *fetch);
     void HandleFailure(emscripten_fetch_t *fetch);

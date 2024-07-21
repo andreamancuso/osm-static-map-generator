@@ -98,6 +98,8 @@
     "future": "cpp",
     "endianness.h": "c",
     "string_view": "cpp",
-    "expected": "cpp"
+    "expected": "cpp",
+    "pix_internal.h": "c",
+    "allheaders.h": "c"
   }
 }

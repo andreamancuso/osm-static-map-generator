@@ -1,3 +1,7 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include <allheaders.h>
+
 #include "mapgenerator.h"
 #include "shared.h"
 
@@ -67,8 +71,6 @@ void MapGenerator::Render(std::tuple<double, double> center, int zoom) {
     m_centerX = lonToX(std::get<0>(center), m_zoom);
     m_centerY = latToY(std::get<1>(center), m_zoom);
 
-    m_image = std::make_unique<Image>(m_width, m_height);
-
     for (auto& tileLayer : m_tileLayers) {
         DrawLayer(tileLayer);
     }
@@ -122,10 +124,10 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
         }
     }
 
-    GetTiles();
+    DownloadTiles();
 };
 
-void MapGenerator::GetTiles() {
+void MapGenerator::DownloadTiles() {
     for (auto& tileDescriptor : m_tileDescriptors) {
         m_tileRequests[tileDescriptor.m_id] = std::optional<bool>();
     }
@@ -136,10 +138,19 @@ void MapGenerator::GetTiles() {
 };
 
 void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
+    // printf("MarkTileRequestFinished a: %d\n", id);
+    if (successOrFailure == false) {
+        // TODO: how to handle this?
+    }
+
     if (m_tileRequests.contains(id)) {
+        // printf("MarkTileRequestFinished b\n");
         const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
+        // printf("MarkTileRequestFinished c\n");
         
         m_tileRequests[id].emplace(successOrFailure);
+
+        // printf("MarkTileRequestFinished d\n");
 
         int successfullyFinishedRequests = 0;
         for (auto& [key, item] : m_tileRequests) {
@@ -148,8 +159,12 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
             }
         }
 
+        // printf("MarkTileRequestFinished e\n");
+
         if (m_tileRequests.size() == successfullyFinishedRequests) {
             printf("All done\n");
+
+            DrawImage();
         } else {
             printf("Still %d to go\n", (m_tileRequests.size() - successfullyFinishedRequests));
         }
@@ -158,3 +173,40 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
     }
 };
 
+void MapGenerator::PrepareTile(TileDescriptor& tileDescriptor) {
+    int tileWidth;
+    int tileHeight;
+
+    auto tileRawData = stbi_load_from_memory((stbi_uc const *)tileDescriptor.m_data, tileDescriptor.m_numBytes, &tileWidth, &tileHeight, NULL, 4);
+    // pixReadMemPng
+    auto rawPix = pixCreate(tileWidth, tileHeight, 32);
+    pixSetData(rawPix, (unsigned int*)tileRawData);
+
+    // --
+    int x = std::get<0>(tileDescriptor.m_box);
+    int y = std::get<1>(tileDescriptor.m_box);
+    int sx = x < 0 ? 0 : x;
+    int sy = y < 0 ? 0 : y;
+    int dx = x < 0 ? -x : 0;
+    int dy = y < 0 ? -y : 0;
+    int extraWidth = x + (tileWidth - m_width);
+    int extraHeight = y + (tileHeight - m_height);
+    int w = tileWidth + (x < 0 ? x : 0) - (extraWidth > 0 ? extraWidth : 0);
+    int h = tileHeight + (y < 0 ? y : 0) - (extraHeight > 0 ? extraHeight : 0);
+
+    auto box = boxCreate(dx, dy, w, h);
+    auto clippedPix = pixClipRectangle(rawPix, box, nullptr);
+
+    size_t clippedPixNumBytes = 4 * pixGetWpl(clippedPix) * pixGetHeight(clippedPix);
+
+    tileDescriptor.m_slicedTileData = malloc(clippedPixNumBytes);
+    memcpy(tileDescriptor.m_slicedTileData, pixGetData(clippedPix), clippedPixNumBytes);
+
+    pixFreeData(rawPix);
+    pixFreeData(clippedPix);
+};
+
+void MapGenerator::DrawImage() {
+    
+
+};

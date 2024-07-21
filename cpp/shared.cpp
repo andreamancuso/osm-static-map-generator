@@ -41,12 +41,23 @@ TileDescriptor::TileDescriptor(int id) {
     m_id = id;
 };
 
+TileDescriptor::~TileDescriptor() {
+    // not entirely sure that's how it's done
+    if (m_data != nullptr) {
+        free((void*)m_data);
+    }
+
+    if (m_slicedTileData != nullptr) {
+        free((void*)m_slicedTileData);
+    }
+}
+
 void TileDescriptor::HandleSuccess(emscripten_fetch_t *fetch) {
     m_success.emplace(true);
     m_numBytes = fetch->numBytes;
     m_status = fetch->status;
-    // printf("HandleSuccess %d %s\n", m_id, fetch->url);
-
+    
+    m_data = malloc(fetch->numBytes);
     memcpy((void*)m_data, fetch->data, fetch->numBytes);
 
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, true);

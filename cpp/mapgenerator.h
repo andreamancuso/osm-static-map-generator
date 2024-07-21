@@ -14,7 +14,6 @@
 
 #include "tiledownloader.h"
 #include "shared.h"
-#include "image.h"
 
 #pragma once
 
@@ -130,7 +129,6 @@ private:
     double m_centerX = 0;
     double m_centerY = 0;
     int m_zoom = 0;
-    std::unique_ptr<Image> m_image;
 
 public:
 
@@ -144,11 +142,11 @@ public:
 
     void DrawLayer(TileServerConfig tileLayer);
 
-    void GetTiles();
+    void DownloadTiles();
 
     void MarkTileRequestFinished(int id, bool successOrFailure);
 
-    // void StitchTilesTogether() {
+    void DrawImage();
 
-    // }
+    void PrepareTile(TileDescriptor& tileDescriptor);
 };
