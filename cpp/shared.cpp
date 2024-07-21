@@ -53,7 +53,13 @@ TileDescriptor::~TileDescriptor() {
     }
 
     if (m_slicedTileData != nullptr) {
+        printf("About to free clipped PIX*\n");
         pixFreeData(m_clippedPix);
+    }
+
+    if (m_slicedTileData != nullptr) {
+        printf("About to free raw PIX*\n");
+        pixFreeData(m_rawPix);
     }
 }
 

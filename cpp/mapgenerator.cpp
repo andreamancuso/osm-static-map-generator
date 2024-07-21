@@ -1,6 +1,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <allheaders.h>
+#include <pix_internal.h>
 
 #include "mapgenerator.h"
 #include "shared.h"
@@ -175,13 +176,14 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
 };
 
 void MapGenerator::PrepareTile(TileDescriptor& tileDescriptor) {
-    int tileWidth;
-    int tileHeight;
+    auto rawPix = pixReadMem((l_uint8*) tileDescriptor.m_data, tileDescriptor.m_numBytes);
+    tileDescriptor.m_rawPix = pixConvert8To32(rawPix);
+    int tileWidth = pixGetWidth(tileDescriptor.m_rawPix);
+    int tileHeight = pixGetHeight(tileDescriptor.m_rawPix);
+    // pixSetDepth(tileDescriptor.m_rawPix, 32);
+    int depth = pixGetDepth(tileDescriptor.m_rawPix);
 
-    auto tileRawData = stbi_load_from_memory((stbi_uc const *)tileDescriptor.m_data, tileDescriptor.m_numBytes, &tileWidth, &tileHeight, NULL, 4);
-    // pixReadMemPng
-    auto rawPix = pixCreate(tileWidth, tileHeight, 32);
-    pixSetData(rawPix, (unsigned int*)tileRawData);
+    printf("tile w %d, h %d, d %d\n", tileWidth, tileHeight, depth);
 
     // --
     int x = std::get<0>(tileDescriptor.m_box);
@@ -198,24 +200,28 @@ void MapGenerator::PrepareTile(TileDescriptor& tileDescriptor) {
     tileDescriptor.m_positionTop = sy;
     tileDescriptor.m_positionLeft = sx;
 
-    auto box = boxCreate(dx, dy, w, h);
-    tileDescriptor.m_clippedPix = pixClipRectangle(rawPix, box, nullptr);
+    BOX* box = boxCreate(dx, dy, w, h);
+    printf("tile %d box %d %d %d %d\n", tileDescriptor.m_id, box->x, box->y, box->w, box->h);
+    tileDescriptor.m_clippedPix = pixClipRectangle(tileDescriptor.m_rawPix, box, nullptr);
 
     size_t clippedPixNumBytes = 4 * pixGetWpl(tileDescriptor.m_clippedPix) * pixGetHeight(tileDescriptor.m_clippedPix);
 
     // printf("%d\n", clippedPixNumBytes);
 
-    tileDescriptor.m_slicedTileData = malloc(clippedPixNumBytes);
-    memcpy(tileDescriptor.m_slicedTileData, pixGetData(tileDescriptor.m_clippedPix), clippedPixNumBytes);
+    // tileDescriptor.m_slicedTileData = malloc(clippedPixNumBytes);
+    // memcpy(tileDescriptor.m_slicedTileData, pixGetData(tileDescriptor.m_clippedPix), clippedPixNumBytes);
 
-    pixFreeData(rawPix);
+    // pixFreeData(rawPix);
 };
 
 void MapGenerator::DrawImage() {
+    printf("w %d h %d\n", m_width, m_height);
     auto texturePix = pixCreate(m_width, m_height, 32);
 
     for (auto& tileDescriptor : m_tileDescriptors) {
         PrepareTile(tileDescriptor);
+    
+        // PrepareTile(tileDescriptor);
 
         // printf("%d %d\n", tileDescriptor.m_positionTop, tileDescriptor.m_positionLeft);
 
@@ -232,14 +238,12 @@ void MapGenerator::DrawImage() {
         );
     }
 
-    size_t numBytes = 4 * pixGetWpl(texturePix) * pixGetHeight(texturePix);
-
     l_uint8* data;
     size_t size;
 
-    // pixWriteMemPng(&data, &size, texturePix, 0.0);
     pixWriteMem(&data, &size, texturePix, IFF_PNG);
-
+    // pixWriteMem(&data, &size, m_tileDescriptors[0].m_rawPix, IFF_PNG);
+    
     m_cb(data, size);
 
     free(data);

@@ -73,6 +73,7 @@ struct TileDescriptor {
 
     void* m_data;
     int m_numBytes;
+    PIX* m_rawPix;
 
     PIX* m_clippedPix;
     void* m_slicedTileData;
