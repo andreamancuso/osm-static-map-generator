@@ -34,8 +34,8 @@ double xToLon(double x, int zoom) {
 
 double meterToPixel(double meter, int zoom, double lat) {
     double latitudeRadians = lat * (M_PI / 180);
-    double meterProPixel = (156543.03392 * cos(latitudeRadians)) / std::pow(2, zoom);
-    return meter / meterProPixel;
+    double meterPerPixel = (156543.03392 * cos(latitudeRadians)) / std::pow(2, zoom);
+    return meter / meterPerPixel;
 }
 
 TileDescriptor::TileDescriptor(int id) {
@@ -48,17 +48,11 @@ TileDescriptor::~TileDescriptor() {
         free((void*)m_data);
     }
 
-    if (m_slicedTileData != nullptr) {
-        free((void*)m_slicedTileData);
-    }
-
-    if (m_slicedTileData != nullptr) {
-        printf("About to free clipped PIX*\n");
+    if (m_clippedPix != nullptr) {
         pixFreeData(m_clippedPix);
     }
 
-    if (m_slicedTileData != nullptr) {
-        printf("About to free raw PIX*\n");
+    if (m_rawPix != nullptr) {
         pixFreeData(m_rawPix);
     }
 }

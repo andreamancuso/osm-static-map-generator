@@ -76,7 +76,6 @@ struct TileDescriptor {
     PIX* m_rawPix;
 
     PIX* m_clippedPix;
-    void* m_slicedTileData;
     int m_positionTop;
     int m_positionLeft;
 

@@ -1,7 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <allheaders.h>
-#include <pix_internal.h>
 
 #include "mapgenerator.h"
 #include "shared.h"
@@ -9,6 +8,8 @@
 MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) {
     m_tileCounter = 0;
     m_cb = cb;
+
+    m_tileDescriptors.reserve(4);
 
     if (options.m_tileLayers.size() == 0) {
         TileServerConfig tileLayer;
@@ -79,21 +80,23 @@ void MapGenerator::Render(std::tuple<double, double> center, int zoom) {
 };
 
 int MapGenerator::XToPx(int x) {
-    return (int)round((x - m_centerX) * m_tileSize + m_width / 2);
+    return (int)round((x - m_centerX) * m_tileSize + (m_width / 2));
 };
 
 int MapGenerator::YToPx(int y) {
-    return (int)round((y - m_centerY) * m_tileSize + m_height / 2);
+    return (int)round((y - m_centerY) * m_tileSize + (m_height / 2));
 };
 
 void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
     int xMin = floor(m_centerX - (0.5 * m_width) / m_tileSize);
     int yMin = floor(m_centerY - (0.5 * m_height) / m_tileSize);
-    int xMax = floor(m_centerX + (0.5 * m_width) / m_tileSize);
-    int yMax = floor(m_centerY + (0.5 * m_height) / m_tileSize);
+    int xMax = ceil(m_centerX + (0.5 * m_width) / m_tileSize);
+    int yMax = ceil(m_centerY + (0.5 * m_height) / m_tileSize);
 
-    for (int x = xMin; x < xMax; x++) {
-        for (int y = yMin; y < yMax; y++) {
+    int x, y;
+
+    for (x = xMin; x < xMax; x++) {
+        for (y = yMin; y < yMax; y++) {
             int maxTile = std::pow(2, m_zoom);
             int tileX = (x + maxTile) % maxTile;
             int tileY = (y + maxTile) % maxTile;
@@ -119,10 +122,10 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
                         return {};
                     }
                 });
-            
+
             tile.m_box = std::make_tuple<int, int, int, int>(XToPx(x), YToPx(y), XToPx(x + 1), YToPx(y + 1));
 
-            m_tileDescriptors.emplace_back(tile);
+            m_tileDescriptors.emplace_back(std::make_unique<TileDescriptor>(tile));
         }
     }
 
@@ -131,28 +134,23 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
 
 void MapGenerator::DownloadTiles() {
     for (auto& tileDescriptor : m_tileDescriptors) {
-        m_tileRequests[tileDescriptor.m_id] = std::optional<bool>();
+        m_tileRequests[tileDescriptor->m_id] = std::optional<bool>();
     }
 
     for (auto& tileDescriptor : m_tileDescriptors) {
-        download(tileDescriptor);
+        download(tileDescriptor.get());
     }
 };
 
 void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
-    // printf("MarkTileRequestFinished a: %d\n", id);
     if (successOrFailure == false) {
         // TODO: how to handle this?
     }
 
     if (m_tileRequests.contains(id)) {
-        // printf("MarkTileRequestFinished b\n");
         const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
-        // printf("MarkTileRequestFinished c\n");
         
         m_tileRequests[id].emplace(successOrFailure);
-
-        // printf("MarkTileRequestFinished d\n");
 
         int successfullyFinishedRequests = 0;
         for (auto& [key, item] : m_tileRequests) {
@@ -161,33 +159,37 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
             }
         }
 
-        // printf("MarkTileRequestFinished e\n");
-
         if (m_tileRequests.size() == successfullyFinishedRequests) {
-            printf("All done\n");
-
             DrawImage();
-        } else {
-            printf("Still %d to go\n", (m_tileRequests.size() - successfullyFinishedRequests));
         }
     } else {
         printf("Could not find %d in map\n", id);
     }
 };
 
-void MapGenerator::PrepareTile(TileDescriptor& tileDescriptor) {
-    auto rawPix = pixReadMem((l_uint8*) tileDescriptor.m_data, tileDescriptor.m_numBytes);
-    tileDescriptor.m_rawPix = pixConvert8To32(rawPix);
-    int tileWidth = pixGetWidth(tileDescriptor.m_rawPix);
-    int tileHeight = pixGetHeight(tileDescriptor.m_rawPix);
-    // pixSetDepth(tileDescriptor.m_rawPix, 32);
-    int depth = pixGetDepth(tileDescriptor.m_rawPix);
+bool MapGenerator::PrepareTile(TileDescriptor* tileDescriptor) {
+    auto rawPix = pixReadMemPng((l_uint8*) tileDescriptor->m_data, tileDescriptor->m_numBytes);
 
-    printf("tile w %d, h %d, d %d\n", tileWidth, tileHeight, depth);
+    if (!rawPix) {
+        return false;
+    }
 
-    // --
-    int x = std::get<0>(tileDescriptor.m_box);
-    int y = std::get<1>(tileDescriptor.m_box);
+    int rawPixDepth = pixGetDepth(rawPix);
+
+    if (rawPixDepth == 4) {
+        tileDescriptor->m_rawPix = pixConvert8To32(pixConvert4To8(rawPix, TRUE));
+    } else if (rawPixDepth == 8) {
+        tileDescriptor->m_rawPix = pixConvert8To32(rawPix);
+    } else {
+        tileDescriptor->m_rawPix = pixClone(rawPix);
+    }
+    
+    int tileWidth = pixGetWidth(tileDescriptor->m_rawPix);
+    int tileHeight = pixGetHeight(tileDescriptor->m_rawPix);
+    int depth = pixGetDepth(tileDescriptor->m_rawPix);
+
+    int x = std::get<0>(tileDescriptor->m_box);
+    int y = std::get<1>(tileDescriptor->m_box);
     int sx = x < 0 ? 0 : x;
     int sy = y < 0 ? 0 : y;
     int dx = x < 0 ? -x : 0;
@@ -197,54 +199,45 @@ void MapGenerator::PrepareTile(TileDescriptor& tileDescriptor) {
     int w = tileWidth + (x < 0 ? x : 0) - (extraWidth > 0 ? extraWidth : 0);
     int h = tileHeight + (y < 0 ? y : 0) - (extraHeight > 0 ? extraHeight : 0);
 
-    tileDescriptor.m_positionTop = sy;
-    tileDescriptor.m_positionLeft = sx;
+    tileDescriptor->m_positionTop = sy;
+    tileDescriptor->m_positionLeft = sx;
 
     BOX* box = boxCreate(dx, dy, w, h);
-    printf("tile %d box %d %d %d %d\n", tileDescriptor.m_id, box->x, box->y, box->w, box->h);
-    tileDescriptor.m_clippedPix = pixClipRectangle(tileDescriptor.m_rawPix, box, nullptr);
+    tileDescriptor->m_clippedPix = pixClipRectangle(tileDescriptor->m_rawPix, box, nullptr);
 
-    size_t clippedPixNumBytes = 4 * pixGetWpl(tileDescriptor.m_clippedPix) * pixGetHeight(tileDescriptor.m_clippedPix);
+    pixFreeData(rawPix);
 
-    // printf("%d\n", clippedPixNumBytes);
-
-    // tileDescriptor.m_slicedTileData = malloc(clippedPixNumBytes);
-    // memcpy(tileDescriptor.m_slicedTileData, pixGetData(tileDescriptor.m_clippedPix), clippedPixNumBytes);
-
-    // pixFreeData(rawPix);
+    return true;
 };
 
 void MapGenerator::DrawImage() {
-    printf("w %d h %d\n", m_width, m_height);
     auto texturePix = pixCreate(m_width, m_height, 32);
 
     for (auto& tileDescriptor : m_tileDescriptors) {
-        PrepareTile(tileDescriptor);
-    
-        // PrepareTile(tileDescriptor);
-
-        // printf("%d %d\n", tileDescriptor.m_positionTop, tileDescriptor.m_positionLeft);
-
-        pixRasterop(
-            texturePix, 
-            tileDescriptor.m_positionLeft, 
-            tileDescriptor.m_positionTop, 
-            pixGetWidth(tileDescriptor.m_clippedPix), 
-            pixGetHeight(tileDescriptor.m_clippedPix), 
-            PIX_SRC, 
-            tileDescriptor.m_clippedPix, 
-            0, 
-            0
-        );
+        if (PrepareTile(tileDescriptor.get())) {
+            pixRasterop(
+                texturePix, 
+                tileDescriptor->m_positionLeft, 
+                tileDescriptor->m_positionTop, 
+                pixGetWidth(tileDescriptor->m_clippedPix), 
+                pixGetHeight(tileDescriptor->m_clippedPix), 
+                PIX_SRC,
+                tileDescriptor->m_clippedPix, 
+                0, 
+                0
+            );
+        } else {
+            // TODO: log?
+        }
     }
 
     l_uint8* data;
     size_t size;
 
     pixWriteMem(&data, &size, texturePix, IFF_PNG);
-    // pixWriteMem(&data, &size, m_tileDescriptors[0].m_rawPix, IFF_PNG);
     
     m_cb(data, size);
 
     free(data);
+    pixFreeData(texturePix);
 };

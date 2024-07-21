@@ -31,8 +31,6 @@ class WasmRunner {
             MapGeneratorOptions mapGeneratorOptions(options);
 
             jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, [](void* data, size_t numBytes) {
-                printf("Generated image consisting of %d bytes\n", (int)numBytes);
-
                 EM_ASM_ARGS(
                     { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
                     data,

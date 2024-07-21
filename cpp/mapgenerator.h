@@ -112,7 +112,7 @@ private:
 
     int m_tileCounter;
 
-    std::vector<TileDescriptor> m_tileDescriptors;
+    std::vector<std::unique_ptr<TileDescriptor>> m_tileDescriptors;
     std::unordered_map<int, std::optional<bool>> m_tileRequests;
 
     std::vector<TileServerConfig> m_tileLayers;
@@ -152,5 +152,5 @@ public:
 
     void DrawImage();
 
-    void PrepareTile(TileDescriptor& tileDescriptor);
+    bool PrepareTile(TileDescriptor* tileDescriptor);
 };
