@@ -122,7 +122,7 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
             
             tile.m_box = std::make_tuple<int, int, int, int>(XToPx(x), YToPx(y), XToPx(x + 1), YToPx(y + 1));
 
-            printf("Adding tile descriptor %d %s\n", tile.m_id, tile.m_url.c_str());
+            // printf("Adding tile descriptor %d %s\n", tile.m_id, tile.m_url.c_str());
 
             m_tileDescriptors.emplace_back(tile);
         }
@@ -143,7 +143,7 @@ void MapGenerator::GetTiles() {
         download(tileDescriptor);
     }
 
-    printf("Scheduled %d downloads\n", m_tileRequests.size());
+    // printf("Scheduled %d downloads\n", m_tileRequests.size());
 
     // coro::sync_wait(coro::when_all(std::move(tasks)));
 
@@ -152,9 +152,9 @@ void MapGenerator::GetTiles() {
 
 void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
     if (m_tileRequests.contains(id)) {
-        printf("MarkTileRequestFinished a\n");
+        // printf("MarkTileRequestFinished a\n");
         const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
-        printf("MarkTileRequestFinished b\n");
+        // printf("MarkTileRequestFinished b\n");
         
         m_tileRequests[id].emplace(successOrFailure);
 

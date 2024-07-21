@@ -112,6 +112,7 @@ private:
     int m_tileCounter;
 
     std::vector<TileDescriptor> m_tileDescriptors;
+    std::unordered_map<int, std::optional<bool>> m_tileRequests;
 
     std::vector<TileServerConfig> m_tileLayers;
     int m_width;
@@ -132,7 +133,6 @@ private:
     std::unique_ptr<Image> m_image;
 
 public:
-    std::unordered_map<int, std::optional<bool>> m_tileRequests;
 
     MapGenerator(MapGeneratorOptions& options);
 

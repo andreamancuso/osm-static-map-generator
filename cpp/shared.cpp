@@ -42,27 +42,19 @@ TileDescriptor::TileDescriptor(int id) {
 };
 
 void TileDescriptor::HandleSuccess(emscripten_fetch_t *fetch) {
-    // printf("HandleSuccess a\n");
     m_success.emplace(true);
-    // printf("HandleSuccess b\n");
     m_numBytes = fetch->numBytes;
-    // printf("HandleSuccess c\n");
     m_status = fetch->status;
-    printf("HandleSuccess %d %s\n", m_id, fetch->url);
+    // printf("HandleSuccess %d %s\n", m_id, fetch->url);
 
-    // memcpy((void*)m_data, fetch->data, fetch->numBytes);
-
-    // m_mapGeneratorPtr->m_tileRequests[m_url].emplace(true);
+    memcpy((void*)m_data, fetch->data, fetch->numBytes);
 
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, true);
-    // printf("HandleSuccess e\n");
 };
 
 void TileDescriptor::HandleFailure(emscripten_fetch_t *fetch) {
     m_success.emplace(false);
     m_status = fetch->status;
-
-    // m_mapGeneratorPtr->m_tileRequests[m_url].emplace(false);
 
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
 };
