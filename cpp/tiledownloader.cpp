@@ -37,8 +37,6 @@ void download(TileDescriptor& tileDescriptor) {
         emscripten_fetch_close(fetch); // Also free data on failure.
     };
 
-    // printf("Inside promise d %s\n", tileDescriptor.url.c_str());
-
     std::unique_ptr<char[]> urlAsChar = std::make_unique<char[]>(tileDescriptor.m_url.length() + 1);
     strcpy(urlAsChar.get(), tileDescriptor.m_url.c_str());
 

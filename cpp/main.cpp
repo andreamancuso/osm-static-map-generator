@@ -39,24 +39,9 @@ class WasmRunner {
 
             return jobCounter;
         }
-
-        // void Exit() {
-        //     emscripten_cancel_main_loop();
-        //     emscripten_force_exit(0);
-        // }
 };
 
 static std::unique_ptr<WasmRunner> pRunner = std::make_unique<WasmRunner>();
-
-// int main(int argc, char* argv[]) {
-//     pRunner->run();
-
-//     return 0;
-// }
-
-// void _exit() {
-//     pRunner->Exit();
-// }
 
 int generateMap(const std::string& optionsAsString) {
     return pRunner->GenerateMap(json::parse(optionsAsString));

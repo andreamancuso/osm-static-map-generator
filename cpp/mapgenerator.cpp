@@ -88,15 +88,11 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
     int xMax = floor(m_centerX + (0.5 * m_width) / m_tileSize);
     int yMax = floor(m_centerY + (0.5 * m_height) / m_tileSize);
 
-    // printf("%d,%d,%d,%d\n", xMin, yMin, xMax, yMax);
-
     for (int x = xMin; x < xMax; x++) {
         for (int y = yMin; y < yMax; y++) {
             int maxTile = std::pow(2, m_zoom);
             int tileX = (x + maxTile) % maxTile;
             int tileY = (y + maxTile) % maxTile;
-
-            // printf("%d,%d,%d\n", maxTile, tileX, tileY);
 
             if (m_reverseY) {
                 tileY = (1 << m_zoom) - tileY - 1;
@@ -122,8 +118,6 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
             
             tile.m_box = std::make_tuple<int, int, int, int>(XToPx(x), YToPx(y), XToPx(x + 1), YToPx(y + 1));
 
-            // printf("Adding tile descriptor %d %s\n", tile.m_id, tile.m_url.c_str());
-
             m_tileDescriptors.emplace_back(tile);
         }
     }
@@ -132,29 +126,18 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
 };
 
 void MapGenerator::GetTiles() {
-
     for (auto& tileDescriptor : m_tileDescriptors) {
-        // printf("Adding request to map for %d %s\n", tileDescriptor.m_id, tileDescriptor.m_url.c_str());
         m_tileRequests[tileDescriptor.m_id] = std::optional<bool>();
     }
 
     for (auto& tileDescriptor : m_tileDescriptors) {
-        // printf("Starting download for %d %s\n", tileDescriptor.m_id, tileDescriptor.m_url.c_str());
         download(tileDescriptor);
     }
-
-    // printf("Scheduled %d downloads\n", m_tileRequests.size());
-
-    // coro::sync_wait(coro::when_all(std::move(tasks)));
-
-    // printf("All tasks awaited\n");
 };
 
 void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
     if (m_tileRequests.contains(id)) {
-        // printf("MarkTileRequestFinished a\n");
         const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
-        // printf("MarkTileRequestFinished b\n");
         
         m_tileRequests[id].emplace(successOrFailure);
 
