@@ -3,6 +3,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <allheaders.h>
 #include <emscripten/fetch.h>
 
 #include "shared.h"
@@ -49,6 +50,10 @@ TileDescriptor::~TileDescriptor() {
 
     if (m_slicedTileData != nullptr) {
         free((void*)m_slicedTileData);
+    }
+
+    if (m_slicedTileData != nullptr) {
+        pixFreeData(m_clippedPix);
     }
 }
 

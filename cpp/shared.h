@@ -2,6 +2,7 @@
 #include <string>
 #include <tuple>
 
+#include <allheaders.h>
 #include <emscripten/fetch.h>
 
 #pragma once
@@ -63,14 +64,17 @@ double meterToPixel(double meter, int zoom, double lat);
 
 struct TileDescriptor {
     int m_id;
-    std::string m_url;
     std::tuple<int, int, int, int> m_box;
     MapGenerator* m_mapGeneratorPtr;
+
+    std::string m_url;
     std::optional<bool> m_success;
-    void* m_data;
-    int m_numBytes;
     unsigned short m_status;
 
+    void* m_data;
+    int m_numBytes;
+
+    PIX* m_clippedPix;
     void* m_slicedTileData;
     int m_positionTop;
     int m_positionLeft;

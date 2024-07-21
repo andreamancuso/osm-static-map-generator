@@ -5,6 +5,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
 #endif
 #include <nlohmann/json.hpp>
 
@@ -29,7 +30,15 @@ class WasmRunner {
 
             MapGeneratorOptions mapGeneratorOptions(options);
 
-            jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions);
+            jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, [](void* data, size_t numBytes) {
+                printf("Generated image consisting of %d bytes\n", (int)numBytes);
+
+                EM_ASM_ARGS(
+                    { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
+                    data,
+                    numBytes
+                );
+            });
 
             int zoom = options["zoom"].template get<int>();
             double centerX = options["center"]["x"].template get<double>();

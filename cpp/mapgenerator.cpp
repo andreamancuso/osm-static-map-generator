@@ -5,8 +5,9 @@
 #include "mapgenerator.h"
 #include "shared.h"
 
-MapGenerator::MapGenerator(MapGeneratorOptions& options) {
+MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) {
     m_tileCounter = 0;
+    m_cb = cb;
 
     if (options.m_tileLayers.size() == 0) {
         TileServerConfig tileLayer;
@@ -194,19 +195,52 @@ void MapGenerator::PrepareTile(TileDescriptor& tileDescriptor) {
     int w = tileWidth + (x < 0 ? x : 0) - (extraWidth > 0 ? extraWidth : 0);
     int h = tileHeight + (y < 0 ? y : 0) - (extraHeight > 0 ? extraHeight : 0);
 
-    auto box = boxCreate(dx, dy, w, h);
-    auto clippedPix = pixClipRectangle(rawPix, box, nullptr);
+    tileDescriptor.m_positionTop = sy;
+    tileDescriptor.m_positionLeft = sx;
 
-    size_t clippedPixNumBytes = 4 * pixGetWpl(clippedPix) * pixGetHeight(clippedPix);
+    auto box = boxCreate(dx, dy, w, h);
+    tileDescriptor.m_clippedPix = pixClipRectangle(rawPix, box, nullptr);
+
+    size_t clippedPixNumBytes = 4 * pixGetWpl(tileDescriptor.m_clippedPix) * pixGetHeight(tileDescriptor.m_clippedPix);
+
+    // printf("%d\n", clippedPixNumBytes);
 
     tileDescriptor.m_slicedTileData = malloc(clippedPixNumBytes);
-    memcpy(tileDescriptor.m_slicedTileData, pixGetData(clippedPix), clippedPixNumBytes);
+    memcpy(tileDescriptor.m_slicedTileData, pixGetData(tileDescriptor.m_clippedPix), clippedPixNumBytes);
 
     pixFreeData(rawPix);
-    pixFreeData(clippedPix);
 };
 
 void MapGenerator::DrawImage() {
-    
+    auto texturePix = pixCreate(m_width, m_height, 32);
 
+    for (auto& tileDescriptor : m_tileDescriptors) {
+        PrepareTile(tileDescriptor);
+
+        // printf("%d %d\n", tileDescriptor.m_positionTop, tileDescriptor.m_positionLeft);
+
+        pixRasterop(
+            texturePix, 
+            tileDescriptor.m_positionLeft, 
+            tileDescriptor.m_positionTop, 
+            pixGetWidth(tileDescriptor.m_clippedPix), 
+            pixGetHeight(tileDescriptor.m_clippedPix), 
+            PIX_SRC, 
+            tileDescriptor.m_clippedPix, 
+            0, 
+            0
+        );
+    }
+
+    size_t numBytes = 4 * pixGetWpl(texturePix) * pixGetHeight(texturePix);
+
+    l_uint8* data;
+    size_t size;
+
+    // pixWriteMemPng(&data, &size, texturePix, 0.0);
+    pixWriteMem(&data, &size, texturePix, IFF_PNG);
+
+    m_cb(data, size);
+
+    free(data);
 };

@@ -33,6 +33,8 @@ struct TileServerConfig {
     }
 };
 
+typedef void (*mapGeneratorCallback)(void* data, size_t numBytes);
+
 struct MapGeneratorOptions {
     int m_width;
     int m_height;
@@ -130,9 +132,11 @@ private:
     double m_centerY = 0;
     int m_zoom = 0;
 
+    mapGeneratorCallback m_cb;
+
 public:
 
-    MapGenerator(MapGeneratorOptions& options);
+    MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb);
 
     void Render(std::tuple<double, double> center, int zoom);
 

@@ -14,22 +14,14 @@ void download(TileDescriptor& tileDescriptor) {
 
     attr.userData = (void*)&tileDescriptor;
     attr.onsuccess = [](emscripten_fetch_t *fetch) {
-        printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-    
         auto tileDescriptor = reinterpret_cast<TileDescriptor*>(fetch->userData);
         
-        printf("About to mark event as set\n");
-
         tileDescriptor->HandleSuccess(fetch);
-
-        printf("Marked event as set\n");
 
         emscripten_fetch_close(fetch); // Free data associated with the fetch.
     };
 
     attr.onerror = [](emscripten_fetch_t *fetch) {
-        printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
-
         auto tileDescriptor = reinterpret_cast<TileDescriptor*>(fetch->userData);
 
         tileDescriptor->HandleFailure(fetch);

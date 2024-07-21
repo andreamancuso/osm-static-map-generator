@@ -7,3 +7,6 @@
 [submodule "cpp/deps/leptonica"]
 	path = cpp/deps/leptonica
 	url = https://github.com/DanBloomberg/leptonica.git
+[submodule "cpp/deps/libtiff"]
+	path = cpp/deps/libtiff
+	url = https://gitlab.com/libtiff/libtiff.git
