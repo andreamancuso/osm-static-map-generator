@@ -8,6 +8,10 @@
 MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) :
 m_tileDescriptors(), 
 m_tileRequests() {
+    if (options.m_width <= 0 || options.m_height <= 0) {
+        throw std::invalid_argument("Width and height must be positive values.");
+    }
+
     m_tileCounter = 0;
 
     m_cb = cb;
