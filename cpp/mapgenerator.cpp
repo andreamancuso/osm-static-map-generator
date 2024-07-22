@@ -12,8 +12,16 @@ m_tileRequests() {
         throw std::invalid_argument("Width and height must be positive values.");
     }
 
-    if (options.m_tileSize <= 0) {
+    if (options.m_tileSize.has_value() && options.m_tileSize.value() <= 0) {
         throw std::invalid_argument("Tile size must be a positive value.");
+    }
+
+    if (options.m_tileRequestTimeout.has_value() && options.m_tileRequestTimeout.value() <= 0) {
+        throw std::invalid_argument("Tile request timeout must be a positive value.");
+    }
+
+    if (options.m_tileRequestLimit.has_value() && options.m_tileRequestLimit.value() <= 0) {
+        throw std::invalid_argument("Tile request limit must be a positive value.");
     }
 
     m_tileCounter = 0;
