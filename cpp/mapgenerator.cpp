@@ -5,7 +5,9 @@
 #include "mapgenerator.h"
 #include "shared.h"
 
-MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) : m_tileDescriptors(), m_tileRequests() {
+MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) :
+m_tileDescriptors(), 
+m_tileRequests() {
     m_tileCounter = 0;
 
     m_cb = cb;
@@ -96,12 +98,14 @@ void MapGenerator::DrawLayer(TileServerConfig tileLayer) {
     int xMax = ceil(m_centerX + (0.5 * m_width) / m_tileSize);
     int yMax = ceil(m_centerY + (0.5 * m_height) / m_tileSize);
 
+    int maxTile = std::pow(2, m_zoom);
+
     int x, y;
 
     for (x = xMin; x < xMax; x++) {
+        int tileX = (x + maxTile) % maxTile;
+
         for (y = yMin; y < yMax; y++) {
-            int maxTile = std::pow(2, m_zoom);
-            int tileX = (x + maxTile) % maxTile;
             int tileY = (y + maxTile) % maxTile;
 
             if (m_reverseY) {

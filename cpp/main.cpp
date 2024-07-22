@@ -1,11 +1,8 @@
 #include <memory>
 #include <string>
-#include <set>
-#include <optional>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/bind.h>
-#include <emscripten/val.h>
 #endif
 #include <nlohmann/json.hpp>
 
@@ -23,25 +20,25 @@ static auto cb = [](void* data, size_t numBytes) {
 
 class WasmRunner {
     private:
-        int jobCounter = 0;
-        std::unordered_map<int, std::unique_ptr<MapGenerator>> jobs;
+        int m_jobCounter = 0;
+        std::unordered_map<int, std::unique_ptr<MapGenerator>> m_jobs;
 
     public:
         WasmRunner() = default;
 
         int GenerateMap(const json& options) {
             try {
-                jobCounter++;
+                m_jobCounter++;
                 MapGeneratorOptions mapGeneratorOptions(options);
 
-                jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, cb);
+                m_jobs[m_jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, cb);
 
                 int zoom = options["zoom"].template get<int>();
                 double centerX = options["center"]["x"].template get<double>();
                 double centerY = options["center"]["y"].template get<double>();
-                jobs[jobCounter]->Render(std::make_tuple(centerX, centerY), zoom);
+                m_jobs[m_jobCounter]->Render(std::make_tuple(centerX, centerY), zoom);
 
-                return jobCounter;
+                return m_jobCounter;
             } catch (const std::exception& e) {
                 printf("Error: %s\n", e.what());
                 return -1;
