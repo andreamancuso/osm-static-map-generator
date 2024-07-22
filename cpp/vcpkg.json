@@ -3,7 +3,6 @@
     "name": "osmstaticmapgenerator",
     "version-string": "1.0.0",
     "dependencies": [
-        "nlohmann-json",
-        "stb"
+        "nlohmann-json"
     ]
 }

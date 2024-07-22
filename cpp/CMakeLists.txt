@@ -24,7 +24,6 @@ add_compile_definitions(HAVE_LIBJPEG HAVE_LIBTIFF HAVE_LIBPNG)
 # add_definitions(-std=c++23)
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(Stb REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(DEPS ${CMAKE_CURRENT_SOURCE_DIR}/deps)
@@ -91,7 +90,6 @@ if (DEFINED EMSCRIPTEN)
         osmStaticMapGenerator 
         PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR} 
-        ${Stb_INCLUDE_DIR} 
         ${DEPS}/leptonica/src
         ${DEPS}/libtiff/libtiff
         ${DEPS}/libtiff/port
