@@ -5,11 +5,10 @@
 #include "mapgenerator.h"
 #include "shared.h"
 
-MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) {
+MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) : m_tileDescriptors(), m_tileRequests() {
     m_tileCounter = 0;
-    m_cb = cb;
 
-    m_tileDescriptors.reserve(4);
+    m_cb = cb;
 
     if (options.m_tileLayers.size() == 0) {
         TileServerConfig tileLayer;
@@ -243,4 +242,8 @@ void MapGenerator::DrawImage() {
 
     free(data);
     pixFreeData(texturePix);
+
+    for (auto& tileDescriptor : m_tileDescriptors) {
+        tileDescriptor->FreeResources();
+    }
 };

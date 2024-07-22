@@ -80,8 +80,9 @@ struct TileDescriptor {
     int m_positionLeft;
 
     TileDescriptor(int id);
-    ~TileDescriptor();
 
     void HandleSuccess(emscripten_fetch_t *fetch);
     void HandleFailure(emscripten_fetch_t *fetch);
+
+    void FreeResources();
 };

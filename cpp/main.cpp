@@ -13,6 +13,14 @@
 
 using json = nlohmann::json;
 
+static auto cb = [](void* data, size_t numBytes) {
+    EM_ASM_ARGS(
+        { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
+        data,
+        numBytes
+    );
+};
+
 class WasmRunner {
     private:
         int jobCounter = 0;
@@ -21,28 +29,16 @@ class WasmRunner {
     public:
         WasmRunner() = default;
 
-        void run() {
-            
-        }
-
         int GenerateMap(const json& options) {
             try {
                 jobCounter++;
-
                 MapGeneratorOptions mapGeneratorOptions(options);
 
-                jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, [](void* data, size_t numBytes) {
-                    EM_ASM_ARGS(
-                        { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
-                        data,
-                        numBytes
-                    );
-                });
+                jobs[jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, cb);
 
                 int zoom = options["zoom"].template get<int>();
                 double centerX = options["center"]["x"].template get<double>();
                 double centerY = options["center"]["y"].template get<double>();
-
                 jobs[jobCounter]->Render(std::make_tuple(centerX, centerY), zoom);
 
                 return jobCounter;

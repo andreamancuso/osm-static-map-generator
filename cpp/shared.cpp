@@ -40,8 +40,7 @@ double meterToPixel(double meter, int zoom, double lat) {
 
 TileDescriptor::TileDescriptor(int id) : m_id(id) {};
 
-TileDescriptor::~TileDescriptor() {
-    // not entirely sure that's how it's done
+void TileDescriptor::FreeResources() {
     if (m_data) {
         free((void*)m_data);
     }
@@ -53,7 +52,7 @@ TileDescriptor::~TileDescriptor() {
     if (m_rawPix) {
         pixFreeData(m_rawPix);
     }
-}
+};
 
 void TileDescriptor::HandleSuccess(emscripten_fetch_t *fetch) {
     m_success.emplace(true);
