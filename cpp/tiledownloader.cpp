@@ -1,5 +1,3 @@
-#include <exception>
-#include <stdexcept>
 #include <emscripten/fetch.h>
 
 #include "tiledownloader.h"

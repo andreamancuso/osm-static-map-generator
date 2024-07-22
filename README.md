@@ -1,6 +1,6 @@
 # osm-static-map-generator
 
-**IMPORTANT: If you plan to use this library then please remember to follow [OpenStreetMap's Licence/Attribution Guidelines](https://osmfoundation.org/wiki/Licence/Attribution_Guidelines).**
+**IMPORTANT: If you plan to use this library, then please remember to follow [OpenStreetMap's Licence/Attribution Guidelines](https://osmfoundation.org/wiki/Licence/Attribution_Guidelines).**
 
 ## What is it?
 
@@ -23,13 +23,11 @@ Based on my research, it is battle-tested and is the only library I got to work 
 
 ## What inspired you when writing the library?
 
-I came across: https://github.com/StephanGeorg/staticmaps , a brilliant library for Node.js. I ported it to the browser, replacing [Sharp](https://github.com/lovell/sharp) with [Jimp](https://github.com/jimp-dev/jimp).
-
-I then decided to port it to WASM.
+I came across: https://github.com/StephanGeorg/staticmaps , a brilliant library for Node.js. After porting it to the browser, replacing [Sharp](https://github.com/lovell/sharp) with [Jimp](https://github.com/jimp-dev/jimp), I decided to port it to WASM.
 
 ## What's next in the roadmap?
 
-- proper error handling/recovery
+- proper error handling/recovery, preferably with a retry mechanism
 - tests
 - throttling
 - multithreading support (once I figure out how to tame pthreads in emscripten)

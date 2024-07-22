@@ -9,6 +9,14 @@
 using json = nlohmann::json;
 
 static auto cb = [](void* data, size_t numBytes) {
+    if (data == nullptr || numBytes == 0) {
+        EM_ASM_ARGS(
+            { Module.eventHandlers.onMapGeneratorJobError(UTF8ToString($0)); },
+            "Error: Invalid data received in callback."
+        );
+        return;
+    }
+
     EM_ASM_ARGS(
         { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
         data,

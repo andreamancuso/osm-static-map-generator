@@ -12,6 +12,10 @@ m_tileRequests() {
         throw std::invalid_argument("Width and height must be positive values.");
     }
 
+    if (options.m_tileSize <= 0) {
+        throw std::invalid_argument("Tile size must be a positive value.");
+    }
+
     m_tileCounter = 0;
 
     m_cb = cb;
@@ -158,23 +162,18 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
         // TODO: how to handle this?
     }
 
-    if (m_tileRequests.contains(id)) {
-        const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
-        
-        m_tileRequests[id].emplace(successOrFailure);
-
-        int successfullyFinishedRequests = 0;
-        for (auto& [key, item] : m_tileRequests) {
-            if (item.has_value() && item.value() == true) {
-                successfullyFinishedRequests++;
-            }
-        }
-
-        if (m_tileRequests.size() == successfullyFinishedRequests) {
-            DrawImage();
-        }
-    } else {
+    if (!m_tileRequests.contains(id)) {
         printf("Could not find %d in map\n", id);
+        return;
+    }
+
+    const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
+    
+    m_tileRequests[id].emplace(successOrFailure);
+
+    if (std::all_of(m_tileRequests.begin(), m_tileRequests.end(),
+                [](const auto& req) { return req.second.has_value() && req.second.value() == true; })) {
+        DrawImage();
     }
 };
 
