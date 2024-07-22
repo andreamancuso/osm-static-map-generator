@@ -18,7 +18,7 @@ void downloadTile(TileDescriptor* tileDescriptor) {
             auto tileDescriptor = reinterpret_cast<TileDescriptor*>(fetch->userData);
             tileDescriptor->HandleSuccess(fetch);
         } else {
-            // log?
+            printf("Error: fetch->userData is null in onsuccess callback.\n");
         }
 
         emscripten_fetch_close(fetch); // Free data associated with the fetch.
@@ -29,7 +29,7 @@ void downloadTile(TileDescriptor* tileDescriptor) {
             auto tileDescriptor = reinterpret_cast<TileDescriptor*>(fetch->userData);
             tileDescriptor->HandleFailure(fetch);
         } else {
-            // log?
+            printf("Error: fetch->userData is null in onerror callback.\n");
         }
 
         emscripten_fetch_close(fetch); // Also free data on failure.
