@@ -33,7 +33,7 @@ struct TileServerConfig {
     }
 };
 
-typedef void (*mapGeneratorCallback)(void* data, size_t numBytes);
+typedef std::function<void(void*, size_t)> mapGeneratorCallback;
 
 struct MapGeneratorOptions {
     int m_width;
@@ -49,6 +49,8 @@ struct MapGeneratorOptions {
     std::unordered_map<std::string, std::string> m_tileRequestHeaders;
     std::optional<std::string> m_tileUrl;
     std::vector<TileServerConfig> m_tileLayers;
+
+    MapGeneratorOptions() = default;
 
     MapGeneratorOptions(const json& options) {
         if (options.is_object()) {
