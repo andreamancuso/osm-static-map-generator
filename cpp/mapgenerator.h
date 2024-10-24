@@ -8,8 +8,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include <emscripten/fetch.h>
-
 #include <nlohmann/json.hpp>
 
 #include "tiledownloader.h"

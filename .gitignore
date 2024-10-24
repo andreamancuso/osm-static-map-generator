@@ -1,4 +1,9 @@
+.idea
 dist
+
+cpp/cmake-build-debug
+cpp/cmake-build-release
+cpp/build
 
 CMakeFiles
 build.ninja

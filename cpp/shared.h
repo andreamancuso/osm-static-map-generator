@@ -3,7 +3,12 @@
 #include <tuple>
 
 #include <allheaders.h>
+
+#ifdef __EMSCRIPTEN__
 #include <emscripten/fetch.h>
+#else
+#include <curl/curl.h>
+#endif
 
 #pragma once
 
@@ -81,8 +86,13 @@ struct TileDescriptor {
 
     TileDescriptor(int id);
 
+#ifdef __EMSCRIPTEN__
     void HandleSuccess(emscripten_fetch_t *fetch);
     void HandleFailure(emscripten_fetch_t *fetch);
+#else
+    void HandleSuccess(void *buffer, size_t sz, size_t n);
+    void HandleFailure();
+#endif
 
     void FreeResources();
 };

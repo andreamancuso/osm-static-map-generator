@@ -4,7 +4,12 @@
 #include <math.h>
 
 #include <allheaders.h>
+
+#ifdef __EMSCRIPTEN__
 #include <emscripten/fetch.h>
+#else
+#include <curl/curl.h>
+#endif
 
 #include "shared.h"
 #include "mapgenerator.h"
@@ -54,6 +59,7 @@ void TileDescriptor::FreeResources() {
     }
 };
 
+#ifdef __EMSCRIPTEN__
 void TileDescriptor::HandleSuccess(emscripten_fetch_t *fetch) {
     m_success.emplace(true);
     m_numBytes = fetch->numBytes;
@@ -76,3 +82,27 @@ void TileDescriptor::HandleFailure(emscripten_fetch_t *fetch) {
 
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
 };
+#else
+void TileDescriptor::HandleSuccess(void *buffer, size_t sz, size_t n) {
+    m_success.emplace(true);
+    m_numBytes = sz;
+    // m_status = fetch->status;
+
+    m_data = malloc(sz);
+    if (m_data == nullptr) {
+        // Handle memory allocation failure
+        m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
+        return;
+    }
+    memcpy((void*)m_data, buffer, sz);
+
+    m_mapGeneratorPtr->MarkTileRequestFinished(m_id, true);
+};
+
+void TileDescriptor::HandleFailure() {
+    m_success.emplace(false);
+    // m_status = fetch->status;
+
+    m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
+};
+#endif

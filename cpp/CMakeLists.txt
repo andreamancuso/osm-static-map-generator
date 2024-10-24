@@ -2,20 +2,19 @@ cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_GENERATOR "Ninja")
 set(CMAKE_TOOLCHAIN_FILE deps/vcpkg/scripts/buildsystems/vcpkg.cmake)
-set(VCPKG_TARGET_TRIPLET "wasm32-emscripten")
 
+if(DEFINED ENV{EMSDK})
+    set(VCPKG_TARGET_TRIPLET "wasm32-emscripten")
+    set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE $ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake)
 
-if(NOT DEFINED ENV{EMSDK})
-    message(FATAL_ERROR "Environment variable EMSDK is not defined. Follow the README steps and source emsdk_env.* from the EMSDK root directory in this shell before running CMake")
+    execute_process(
+            COMMAND "npm install"
+            WORKING_DIRECTORY "$ENV{EMSDK}/upstream/emscripten"
+    )
+else()
+    set(VCPKG_TARGET_TRIPLET "x64-windows")
 endif()
 
-
-set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE $ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake)
-
-execute_process(
-        COMMAND "npm install"
-        WORKING_DIRECTORY "$ENV{EMSDK}/upstream/emscripten"
-)
 
 project(osmStaticMapGenerator LANGUAGES C CXX)
 
@@ -26,8 +25,14 @@ set(CMAKE_CXX_STANDARD 23)
 
 find_package(nlohmann_json REQUIRED)
 
+if (NOT DEFINED EMSCRIPTEN)
+    find_package(JPEG REQUIRED)
+    find_package(PNG REQUIRED)
+    find_package(TIFF REQUIRED)
+    find_package(CURL REQUIRED)
+endif()
+
 set(DEPS ${CMAKE_CURRENT_SOURCE_DIR}/deps)
-set(CMAKE_EXECUTABLE_SUFFIX ".mjs")
 
 file(GLOB LEPTONICA_SRC "${DEPS}/leptonica/src/*.c")
 
@@ -78,7 +83,10 @@ set(LIBTIFF_SRC
 )
 
 if (DEFINED EMSCRIPTEN)
-	add_executable(osmStaticMapGenerator main.cpp
+    set(CMAKE_EXECUTABLE_SUFFIX ".mjs")
+
+	add_executable(osmStaticMapGenerator
+        main.cpp
         shared.cpp
         tiledownloader.cpp
         mapgenerator.cpp
@@ -86,17 +94,46 @@ if (DEFINED EMSCRIPTEN)
         ${LIBTIFF_SRC}
     )
 
+	set_target_properties(osmStaticMapGenerator PROPERTIES COMPILE_FLAGS "-O3 -Wall -Wformat -Wno-implicit-int -s DISABLE_EXCEPTION_CATCHING=0 --use-port=libjpeg --use-port=libpng")
+    set_target_properties(osmStaticMapGenerator PROPERTIES LINK_FLAGS "--no-heap-copy -O3 -lembind -s ENVIRONMENT='web' --use-port=libjpeg --use-port=libpng -s MODULARIZE=1 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -sFETCH -s NO_EXIT_RUNTIME=1 -s STANDALONE_WASM=0 -s EXIT_RUNTIME=0 -s ASSERTIONS=1 -s STACK_OVERFLOW_CHECK=2 -s DISABLE_EXCEPTION_CATCHING=0 -s SINGLE_FILE=1")
+    set_target_properties(osmStaticMapGenerator PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../ts/src/lib/wasm)
+
+    target_link_libraries(osmStaticMapGenerator PRIVATE
+        nlohmann_json::nlohmann_json
+    )
+
     target_include_directories(
-        osmStaticMapGenerator 
-        PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR} 
+        osmStaticMapGenerator
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${DEPS}/leptonica/src
         ${DEPS}/libtiff/libtiff
         ${DEPS}/libtiff/port
     )
+else()
+    add_library(osmStaticMapGenerator
+        shared.cpp
+        tiledownloader.cpp
+        mapgenerator.cpp
+        ${LEPTONICA_SRC}
+        ${LIBTIFF_SRC}
+    )
 
-	set_target_properties(osmStaticMapGenerator PROPERTIES COMPILE_FLAGS "-O3 -Wall -Wformat -Wno-implicit-int -s DISABLE_EXCEPTION_CATCHING=0 --use-port=libjpeg --use-port=libpng")
-    set_target_properties(osmStaticMapGenerator PROPERTIES LINK_FLAGS "--no-heap-copy -O3 -lembind -s ENVIRONMENT='web' --use-port=libjpeg --use-port=libpng -s MODULARIZE=1 -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -sFETCH -s NO_EXIT_RUNTIME=1 -s STANDALONE_WASM=0 -s EXIT_RUNTIME=0 -s ASSERTIONS=1 -s STACK_OVERFLOW_CHECK=2 -s DISABLE_EXCEPTION_CATCHING=0 -s SINGLE_FILE=1")
-    set_target_properties(osmStaticMapGenerator PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../ts/src/lib/wasm)
-    target_link_libraries(osmStaticMapGenerator PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(osmStaticMapGenerator PRIVATE
+        nlohmann_json::nlohmann_json JPEG::JPEG
+        PNG::PNG
+        TIFF::TIFF
+        CURL::libcurl
+    )
+
+    target_include_directories(
+        osmStaticMapGenerator
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${DEPS}/leptonica/src
+    )
 endif()
+
+
+
+
