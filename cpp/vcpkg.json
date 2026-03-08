@@ -4,9 +4,21 @@
     "version-string": "1.0.0",
     "dependencies": [
         "nlohmann-json",
-        "libjpeg-turbo",
-        "libpng",
-        "tiff",
-        "curl"
+        {
+            "name": "libjpeg-turbo",
+            "platform": "!emscripten"
+        },
+        {
+            "name": "libpng",
+            "platform": "!emscripten"
+        },
+        {
+            "name": "tiff",
+            "platform": "!emscripten"
+        },
+        {
+            "name": "curl",
+            "platform": "!emscripten"
+        }
     ]
 }

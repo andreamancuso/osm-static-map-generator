@@ -18,9 +18,15 @@ cmake -S . -B build -GNinja
 cmake --build ./build --target osmStaticMapGenerator
 ```
 
-**WASM vs Native:** The build mode is auto-detected via the `EMSDK` environment variable. If set, builds a WASM `.mjs` module output to `ts/src/lib/wasm/`. Otherwise, builds a native library using system libraries (CURL, JPEG, PNG, TIFF).
+**WASM vs Native:** The build mode is auto-detected via the `EMSDK` environment variable. If set, builds a WASM `.mjs` module output to `ts/src/lib/wasm/`. Otherwise, builds a native library using vcpkg-provided libraries (CURL, JPEG, PNG, TIFF).
 
-**WASM prerequisite:** For Leptonica, create `endianness.h` with `#define L_LITTLE_ENDIAN`. For libtiff, run `emcmake cmake ..` from a `build` folder first.
+**WASM build via Docker** (no local Emscripten install needed):
+
+```bash
+./cpp/build-wasm-docker.sh
+```
+
+Uses `cpp/Dockerfile.wasm` (based on `emscripten/emsdk:3.1.64` with `pkg-config` and `ninja-build` baked in). The libtiff configure step is automated in CMakeLists.txt via `execute_process`. Output goes to `ts/src/lib/wasm/osmStaticMapGenerator.mjs`.
 
 ## Architecture
 
@@ -48,10 +54,10 @@ Conditional compilation via `#ifdef __EMSCRIPTEN__` in `shared.cpp`, `tiledownlo
 
 ### Dependencies
 
-- **vcpkg** (submodule at `cpp/deps/vcpkg`) — manages `nlohmann-json`
-- **Git submodules** — leptonica, libtiff, emscripten (all in `cpp/deps/`)
+- **vcpkg** (submodule at `cpp/deps/vcpkg`) — manages nlohmann-json, and for native builds: libjpeg-turbo, libpng, tiff, curl
+- **Git submodules** — leptonica, libtiff (WASM build only), emscripten (if not using Docker)
 - **Emscripten ports** — libpng, libjpeg (WASM only)
-- **System libraries** (native only) — CURL, JPEG, PNG, TIFF
+- **Docker alternative** — `emscripten/emsdk` image replaces the emscripten submodule for WASM builds
 
 ## Current Limitations
 

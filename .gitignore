@@ -4,6 +4,7 @@ dist
 cpp/cmake-build-debug
 cpp/cmake-build-release
 cpp/build
+cpp/build-wasm
 
 CMakeFiles
 build.ninja
@@ -14,8 +15,8 @@ CMakeCache.txt
 build
 
 
-wasm/*.mjs
-wasm/*.wasm
+**/wasm/*.mjs
+**/wasm/*.wasm
 
 # Logs
 logs

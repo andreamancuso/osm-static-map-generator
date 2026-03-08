@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 
-set(CMAKE_GENERATOR "Ninja")
+# Default to Ninja if no generator specified
+if(NOT DEFINED CMAKE_GENERATOR)
+    set(CMAKE_GENERATOR "Ninja")
+endif()
 set(CMAKE_TOOLCHAIN_FILE deps/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 if(DEFINED ENV{EMSDK})
@@ -86,6 +89,15 @@ set(LIBTIFF_SRC
 )
 
 if (DEFINED EMSCRIPTEN)
+    # Configure libtiff submodule to generate tiffconf.h and tif_config.h
+    if(NOT EXISTS "${DEPS}/libtiff/build-wasm/libtiff/tiffconf.h")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -S "${DEPS}/libtiff" -B "${DEPS}/libtiff/build-wasm"
+                -DCMAKE_TOOLCHAIN_FILE=$ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+            WORKING_DIRECTORY "${DEPS}/libtiff"
+        )
+    endif()
+
     set(CMAKE_EXECUTABLE_SUFFIX ".mjs")
 
 	add_executable(osmStaticMapGenerator
@@ -112,6 +124,7 @@ if (DEFINED EMSCRIPTEN)
         ${DEPS}/leptonica/src
         ${DEPS}/libtiff/libtiff
         ${DEPS}/libtiff/port
+        ${DEPS}/libtiff/build-wasm/libtiff
     )
 else()
     add_library(osmStaticMapGenerator

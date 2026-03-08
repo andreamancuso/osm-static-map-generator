@@ -1,12 +1,8 @@
-# Building the WASM
+# cpp
 
-For Leptonica, create endianness.h: `#define L_LITTLE_ENDIAN`
+See the [root README](../README.md) for build instructions.
 
-For libtiff, run `emcmake cmake ..` from within a newly created `build` folder
-
-Add `-Wno-implicit-int` to compiler flags (libtiff uses an implicit int in a function)
-
-- Build the WASM:
-  - `cd cpp`
-  - `cmake -S . -B build -GNinja`
-  - `cmake --build ./build --target osmStaticMapGenerator`
+The CMake build automatically handles:
+- Generating `endianness.h` for Leptonica
+- Configuring libtiff to generate `tiffconf.h` and `tif_config.h` (WASM builds)
+- Installing vcpkg dependencies (native builds)
