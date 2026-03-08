@@ -10,6 +10,9 @@
     "url": "git+https://github.com/andreamancuso/osm-static-map-generator.git",
     "directory": "packages/wasm"
   },
+  "scripts": {
+    "test:serve": "node test/serve.mjs"
+  },
   "files": [
     "lib/"
   ]

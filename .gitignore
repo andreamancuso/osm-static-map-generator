@@ -15,8 +15,8 @@ CMakeCache.txt
 build
 
 
-**/wasm/*.mjs
-**/wasm/*.wasm
+**/wasm/lib/*.mjs
+**/wasm/lib/*.wasm
 
 # Native addon build artifacts
 packages/native/build/
