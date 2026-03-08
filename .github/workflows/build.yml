@@ -1,0 +1,163 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cpp/**'
+      - 'packages/**'
+      - '.github/workflows/build.yml'
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cpp/**'
+      - 'packages/**'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    name: Build WASM
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build WASM via Docker
+        run: ./cpp/build-wasm-docker.sh
+
+      - name: Upload WASM artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-build
+          path: packages/wasm/lib/osmStaticMapGenerator.mjs
+          retention-days: 7
+
+  build-native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+          - os: macos-14
+            platform: darwin
+            arch: arm64
+          - os: windows-latest
+            platform: win32
+            arch: x64
+
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: cpp/deps/vcpkg/installed
+          key: vcpkg-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('packages/native/vcpkg.json') }}
+
+      - name: Install dependencies
+        working-directory: packages/native
+        run: npm install --ignore-scripts
+
+      - name: Compile native addon
+        working-directory: packages/native
+        run: npx cmake-js compile
+
+      - name: Create prebuilds directory
+        shell: bash
+        working-directory: packages/native
+        run: |
+          mkdir -p prebuilds/${{ matrix.platform }}-${{ matrix.arch }}
+          cp build/Release/osm-static-map-generator.node prebuilds/${{ matrix.platform }}-${{ matrix.arch }}/node.napi.node
+
+      - name: Binary size
+        shell: bash
+        working-directory: packages/native
+        run: ls -lh build/Release/osm-static-map-generator.node
+
+      - name: Smoke test
+        working-directory: packages/native
+        run: node test.js
+
+      - name: Upload prebuild
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuild-${{ matrix.platform }}-${{ matrix.arch }}
+          path: packages/native/prebuilds/
+          retention-days: 7
+
+  publish:
+    needs: [build-wasm, build-native]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Install native package dependencies
+        working-directory: packages/native
+        run: npm install --ignore-scripts
+
+      - name: Download all prebuild artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: packages/native/prebuilds/
+          pattern: prebuild-*
+          merge-multiple: true
+
+      - name: List prebuilds
+        run: find packages/native/prebuilds -type f | sort
+
+      - name: Download WASM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-build
+          path: packages/wasm/lib/
+
+      - name: List WASM build
+        run: ls -lh packages/wasm/lib/
+
+      - name: Publish native package
+        working-directory: packages/native
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish WASM package
+        working-directory: packages/wasm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
