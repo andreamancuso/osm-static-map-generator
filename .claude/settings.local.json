@@ -4,7 +4,8 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:emscripten.org)",
-      "WebFetch(domain:cocalc.com)"
+      "WebFetch(domain:cocalc.com)",
+      "WebFetch(domain:gist.github.com)"
     ]
   }
 }

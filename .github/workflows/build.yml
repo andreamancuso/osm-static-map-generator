@@ -48,7 +48,7 @@ jobs:
           - os: ubuntu-24.04-arm
             platform: linux
             arch: arm64
-          - os: macos-14
+          - os: macos-15
             platform: darwin
             arch: arm64
           - os: windows-latest
@@ -77,7 +77,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: cpp/deps/vcpkg/installed
-          key: vcpkg-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('packages/native/vcpkg.json') }}
+          key: vcpkg-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('packages/native/vcpkg.json', 'packages/native/triplets/*') }}
 
       - name: Install dependencies
         working-directory: packages/native
@@ -94,10 +94,16 @@ jobs:
           mkdir -p prebuilds/${{ matrix.platform }}-${{ matrix.arch }}
           cp build/Release/osm-static-map-generator.node prebuilds/${{ matrix.platform }}-${{ matrix.arch }}/node.napi.node
 
-      - name: Binary size
+      - name: Binary info
         shell: bash
         working-directory: packages/native
-        run: ls -lh build/Release/osm-static-map-generator.node
+        run: |
+          ls -lh build/Release/osm-static-map-generator.node
+          if command -v otool &>/dev/null; then
+            otool -L build/Release/osm-static-map-generator.node
+          elif command -v ldd &>/dev/null; then
+            ldd build/Release/osm-static-map-generator.node
+          fi
 
       - name: Smoke test
         working-directory: packages/native
