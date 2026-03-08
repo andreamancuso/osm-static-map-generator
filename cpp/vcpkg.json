@@ -3,6 +3,10 @@
     "name": "osmstaticmapgenerator",
     "version-string": "1.0.0",
     "dependencies": [
-        "nlohmann-json"
+        "nlohmann-json",
+        "libjpeg-turbo",
+        "libpng",
+        "tiff",
+        "curl"
     ]
 }

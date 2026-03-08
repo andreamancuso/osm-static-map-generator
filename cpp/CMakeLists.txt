@@ -34,6 +34,9 @@ endif()
 
 set(DEPS ${CMAKE_CURRENT_SOURCE_DIR}/deps)
 
+# Generate endianness.h for leptonica (both WASM and x64 are little-endian)
+file(WRITE "${DEPS}/leptonica/src/endianness.h" "#define L_LITTLE_ENDIAN\n")
+
 file(GLOB LEPTONICA_SRC "${DEPS}/leptonica/src/*.c")
 
 set(LIBTIFF_SRC
@@ -116,7 +119,6 @@ else()
         tiledownloader.cpp
         mapgenerator.cpp
         ${LEPTONICA_SRC}
-        ${LIBTIFF_SRC}
     )
 
     target_link_libraries(osmStaticMapGenerator PRIVATE
