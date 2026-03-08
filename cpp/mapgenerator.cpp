@@ -158,27 +158,32 @@ void MapGenerator::DownloadTiles() {
         m_tileRequests[tileDescriptor->m_id] = std::optional<bool>();
     }
 
+#ifdef __EMSCRIPTEN__
     for (auto& tileDescriptor : m_tileDescriptors) {
         downloadTile(tileDescriptor.get());
     }
+#else
+    downloadTiles(m_tileDescriptors, m_tileRequestHeaders,
+                  m_tileRequestTimeout, m_tileRequestLimit);
+#endif
 };
 
 void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
-    if (successOrFailure == false) {
-        // TODO: how to handle this?
-    }
-
     if (!m_tileRequests.contains(id)) {
         printf("Could not find %d in map\n", id);
         return;
     }
 
     const std::lock_guard<std::mutex> lock(m_tileRequestsMutex);
-    
+
     m_tileRequests[id].emplace(successOrFailure);
 
-    if (std::all_of(m_tileRequests.begin(), m_tileRequests.end(),
-                [](const auto& req) { return req.second.has_value() && req.second.value() == true; })) {
+    bool allFinished = std::all_of(
+        m_tileRequests.begin(), m_tileRequests.end(),
+        [](const auto& req) { return req.second.has_value(); }
+    );
+
+    if (allFinished) {
         DrawImage();
     }
 };

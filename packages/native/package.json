@@ -41,6 +41,7 @@
     "build:prebuild:win32-arm64": "npx rimraf build && cmake-js rebuild --arch arm64 && node -e \"const fs=require('fs');fs.mkdirSync('prebuilds/win32-arm64',{recursive:true});fs.copyFileSync('build/Release/osm-static-map-generator.node','prebuilds/win32-arm64/node.napi.node');\"",
     "build:prebuild:linux-x64": "npx rimraf build && cmake-js rebuild && node -e \"const fs=require('fs');fs.mkdirSync('prebuilds/linux-x64',{recursive:true});fs.copyFileSync('build/Release/osm-static-map-generator.node','prebuilds/linux-x64/node.napi.node');\"",
     "build:prebuild:linux-arm64": "npx rimraf build && cmake-js rebuild && node -e \"const fs=require('fs');fs.mkdirSync('prebuilds/linux-arm64',{recursive:true});fs.copyFileSync('build/Release/osm-static-map-generator.node','prebuilds/linux-arm64/node.napi.node');\"",
-    "build:prebuild:darwin-arm64": "npx rimraf build && cmake-js rebuild && node -e \"const fs=require('fs');fs.mkdirSync('prebuilds/darwin-arm64',{recursive:true});fs.copyFileSync('build/Release/osm-static-map-generator.node','prebuilds/darwin-arm64/node.napi.node');\""
+    "build:prebuild:darwin-arm64": "npx rimraf build && cmake-js rebuild && node -e \"const fs=require('fs');fs.mkdirSync('prebuilds/darwin-arm64',{recursive:true});fs.copyFileSync('build/Release/osm-static-map-generator.node','prebuilds/darwin-arm64/node.napi.node');\"",
+    "test": "node test.js"
   }
 }

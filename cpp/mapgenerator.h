@@ -121,8 +121,8 @@ private:
     int m_paddingX = 0;
     int m_paddingY = 0;
     int m_tileSize = 256;
-    int m_tileRequestTimeout;
-    int m_tileRequestLimit = 2; // TODO: use it
+    int m_tileRequestTimeout = 0;
+    int m_tileRequestLimit = 2;
     std::unordered_map<std::string, std::string> m_tileRequestHeaders;
     bool m_reverseY = false;
     int m_zoomRangeMin = 1;
