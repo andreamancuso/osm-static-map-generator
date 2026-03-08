@@ -26,7 +26,7 @@ cmake --build ./build --target osmStaticMapGenerator
 ./cpp/build-wasm-docker.sh
 ```
 
-Uses `cpp/Dockerfile.wasm` (based on `emscripten/emsdk:3.1.64` with `pkg-config` and `ninja-build` baked in). The libtiff configure step is automated in CMakeLists.txt via `execute_process`. Output goes to `ts/src/lib/wasm/osmStaticMapGenerator.mjs`.
+Uses `cpp/Dockerfile.wasm` (based on `emscripten/emsdk:5.0.2` with `pkg-config` and `ninja-build` baked in). The libtiff configure step is automated in CMakeLists.txt via `execute_process`. Output goes to `ts/src/lib/wasm/osmStaticMapGenerator.mjs`.
 
 ## Architecture
 
@@ -50,7 +50,7 @@ JSON Options → MapGeneratorOptions → MapGenerator::Render(center, zoom)
 
 ### Platform Abstraction
 
-Conditional compilation via `#ifdef __EMSCRIPTEN__` in `shared.cpp`, `tiledownloader.cpp`, and `main.cpp`. WASM mode uses Emscripten Fetch API and JS callbacks via `EM_ASM_ARGS`; native mode uses libcurl.
+Conditional compilation via `#ifdef __EMSCRIPTEN__` in `shared.cpp`, `tiledownloader.cpp`, and `main.cpp`. WASM mode uses Emscripten Fetch API and JS callbacks via `EM_ASM`; native mode uses libcurl.
 
 ### Dependencies
 
@@ -58,6 +58,41 @@ Conditional compilation via `#ifdef __EMSCRIPTEN__` in `shared.cpp`, `tiledownlo
 - **Git submodules** — leptonica, libtiff (WASM build only), emscripten (if not using Docker)
 - **Emscripten ports** — libpng, libjpeg (WASM only)
 - **Docker alternative** — `emscripten/emsdk` image replaces the emscripten submodule for WASM builds
+
+## Emscripten Upgrade Notes (3.1.64 → 5.0.2)
+
+The following changes were required when upgrading across two major versions (4.0 and 5.0). Document these for future upgrades.
+
+### Changes made
+
+1. **`EM_ASM_ARGS` → `EM_ASM`** (`cpp/main.cpp`): `EM_ASM_ARGS` was deprecated. `EM_ASM` now accepts variadic arguments with the same `$0`, `$1` positional syntax. This change is backward-compatible with 3.x.
+
+2. **Removed obsolete linker flags** (`cpp/CMakeLists.txt`):
+   - `--no-heap-copy` — legacy flag, no-op with `ALLOW_MEMORY_GROWTH=1`, unrecognized in 5.x
+   - `-s WASM=1` — redundant default since 4.0
+   - `-s STANDALONE_WASM=0` — redundant default since 4.0
+
+3. **Exported `HEAPU8`** (`cpp/CMakeLists.txt`): Added `-s EXPORTED_RUNTIME_METHODS=['HEAPU8']` to linker flags. Emscripten 5.x no longer exports heap views by default. The WASM test harness reads PNG data from `instance.HEAPU8.buffer`.
+
+4. **Docker image tag** (`cpp/Dockerfile.wasm`): `emscripten/emsdk:3.1.64` → `emscripten/emsdk:5.0.2`.
+
+### What didn't need changing
+
+- **`WASM_BIGINT` default ON (4.0)**: Only affects 64-bit types. All embind-exposed types are 32-bit (`int`, `std::string`).
+- **embind library exports removed (4.0)**: We only use `emscripten::function("generateMap", ...)`.
+- **embind requires C++17 (5.0)**: Project uses C++23.
+- **Fetch API (`emscripten_fetch`)**: Stable, unchanged.
+- **`MODULARIZE` factory returns Promise (4.0)**: Already handled with `await`.
+- **`SINGLE_FILE` encoding changed to UTF-8 (5.0)**: Test harness HTML already includes `<meta charset="utf-8">`.
+
+### Future upgrade checklist
+
+When upgrading Emscripten again:
+1. Check the [changelog](https://github.com/emscripten-core/emscripten/blob/main/ChangeLog.md) for breaking changes
+2. Update `cpp/Dockerfile.wasm` image tag
+3. Rebuild: `./cpp/build-wasm-docker.sh`
+4. Test: `cd packages/wasm && npm run test:serve` → open http://localhost:8080
+5. Watch for: deprecated macros, removed linker flags, runtime methods no longer exported by default, Leptonica C code warnings with newer Clang
 
 ## Current Limitations
 

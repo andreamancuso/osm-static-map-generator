@@ -47,7 +47,7 @@ cd osm-static-map-generator
 ./cpp/build-wasm-docker.sh
 ```
 
-This builds a Docker image from `cpp/Dockerfile.wasm` (based on `emscripten/emsdk:3.1.64` with `pkg-config` and `ninja-build`), then runs the CMake build inside the container. Output: `ts/src/lib/wasm/osmStaticMapGenerator.mjs` (single-file WASM module).
+This builds a Docker image from `cpp/Dockerfile.wasm` (based on `emscripten/emsdk:5.0.2` with `pkg-config` and `ninja-build`), then runs the CMake build inside the container. Output: `ts/src/lib/wasm/osmStaticMapGenerator.mjs` (single-file WASM module).
 
 ### WASM build (local Emscripten)
 
