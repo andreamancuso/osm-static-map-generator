@@ -46,6 +46,8 @@ struct MapGeneratorOptions {
     std::optional<int> m_zoomRangeMax;
     std::optional<int> m_tileRetryCount;
     std::optional<bool> m_allowPartialRender;
+    std::optional<int> m_tileCacheMaxEntries;
+    std::optional<int> m_tileCacheTtlMs;
     std::unordered_map<std::string, std::string> m_tileRequestHeaders;
     std::optional<std::string> m_tileUrl;
     std::vector<TileServerConfig> m_tileLayers;
@@ -111,6 +113,14 @@ struct MapGeneratorOptions {
 
             if (options.contains("allowPartialRender") && options["allowPartialRender"].is_boolean()) {
                 m_allowPartialRender.emplace(options["allowPartialRender"].template get<bool>());
+            }
+
+            if (options.contains("tileCacheMaxEntries") && options["tileCacheMaxEntries"].is_number_unsigned()) {
+                m_tileCacheMaxEntries.emplace(options["tileCacheMaxEntries"].template get<int>());
+            }
+
+            if (options.contains("tileCacheTtlMs") && options["tileCacheTtlMs"].is_number_unsigned()) {
+                m_tileCacheTtlMs.emplace(options["tileCacheTtlMs"].template get<int>());
             }
         }
     }

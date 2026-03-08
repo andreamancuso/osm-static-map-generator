@@ -8,22 +8,6 @@
 
 using json = nlohmann::json;
 
-static auto cb = [](void* data, size_t numBytes) {
-    if (data == nullptr || numBytes == 0) {
-        EM_ASM(
-            { Module.eventHandlers.onMapGeneratorJobError(UTF8ToString($0)); },
-            "Error: Invalid data received in callback."
-        );
-        return;
-    }
-
-    EM_ASM(
-        { Module.eventHandlers.onMapGeneratorJobDone($0, $1); },
-        data,
-        numBytes
-    );
-};
-
 class WasmRunner {
     private:
         int m_jobCounter = 0;
@@ -34,17 +18,38 @@ class WasmRunner {
 
         int GenerateMap(const json& options) {
             try {
-                m_jobCounter++;
+                int jobId = ++m_jobCounter;
                 MapGeneratorOptions mapGeneratorOptions(options);
 
-                m_jobs[m_jobCounter] = std::make_unique<MapGenerator>(mapGeneratorOptions, cb);
+                auto jobCb = [this, jobId](void* data, size_t numBytes) {
+                    int failedTileCount = 0;
+                    auto it = m_jobs.find(jobId);
+                    if (it != m_jobs.end()) {
+                        failedTileCount = it->second->GetFailedTileCount();
+                    }
+
+                    if (data == nullptr || numBytes == 0) {
+                        EM_ASM(
+                            { Module.eventHandlers.onMapGeneratorJobError($0, UTF8ToString($1)); },
+                            jobId,
+                            "Render failed: tile downloads failed and partial render is disabled"
+                        );
+                    } else {
+                        EM_ASM(
+                            { Module.eventHandlers.onMapGeneratorJobDone($0, $1, $2, $3); },
+                            jobId, data, numBytes, failedTileCount
+                        );
+                    }
+                };
+
+                m_jobs[jobId] = std::make_unique<MapGenerator>(mapGeneratorOptions, jobCb);
 
                 int zoom = options["zoom"].template get<int>();
                 double centerX = options["center"]["x"].template get<double>();
                 double centerY = options["center"]["y"].template get<double>();
-                m_jobs[m_jobCounter]->Render(std::make_tuple(centerX, centerY), zoom);
+                m_jobs[jobId]->Render(std::make_tuple(centerX, centerY), zoom);
 
-                return m_jobCounter;
+                return jobId;
             } catch (const std::exception& e) {
                 printf("Error: %s\n", e.what());
                 return -1;

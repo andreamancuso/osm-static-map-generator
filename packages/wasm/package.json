@@ -1,8 +1,16 @@
 {
   "name": "osm-static-map-generator-wasm",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WebAssembly build of osm-static-map-generator for browser use",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./lib/index.mjs",
+      "default": "./lib/index.js"
+    },
+    "./lib/osmStaticMapGenerator.mjs": "./lib/osmStaticMapGenerator.mjs"
+  },
   "license": "MIT",
   "author": "Andrea Mancuso",
   "repository": {

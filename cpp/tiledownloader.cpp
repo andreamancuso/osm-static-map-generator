@@ -8,6 +8,10 @@
 #include "shared.h"
 #include "mapgenerator.h"
 
+#ifndef __EMSCRIPTEN__
+#include "tilecache.h"
+#endif
+
 #ifdef __EMSCRIPTEN__
 void downloadTile(TileDescriptor* tileDescriptor) {
     emscripten_fetch_attr_t attr;
@@ -118,6 +122,7 @@ void downloadTiles(
         std::unordered_map<CURL*, TileDescriptor*> handleToTile;
 
         for (auto* td : pendingTiles) {
+            if (td->m_success.has_value()) continue; // already served from cache
             td->ResetData();
             CURL* easy = createEasyHandle(td, headerList, timeoutSeconds);
             if (!easy) {
@@ -150,6 +155,7 @@ void downloadTiles(
                     TileDescriptor* td = it->second;
                     if (msg->data.result == CURLE_OK) {
                         td->m_success.emplace(true);
+                        TileCache::getGlobalInstance().put(td->m_url, td->m_data, td->m_numBytes);
                         td->m_mapGeneratorPtr->MarkTileRequestFinished(td->m_id, true);
                     } else if (attempt < maxRetries) {
                         failedTiles.push_back(td);

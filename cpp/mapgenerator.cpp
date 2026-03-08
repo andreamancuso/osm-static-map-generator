@@ -3,6 +3,10 @@
 #include "mapgenerator.h"
 #include "shared.h"
 
+#ifndef __EMSCRIPTEN__
+#include "tilecache.h"
+#endif
+
 MapGenerator::MapGenerator(MapGeneratorOptions& options, mapGeneratorCallback cb) :
 m_tileDescriptors(), 
 m_tileRequests() {
@@ -84,6 +88,16 @@ m_tileRequests() {
     }
 
     m_tileRequestHeaders = options.m_tileRequestHeaders;
+
+#ifndef __EMSCRIPTEN__
+    if (options.m_tileCacheMaxEntries.has_value() || options.m_tileCacheTtlMs.has_value()) {
+        auto& cache = TileCache::getGlobalInstance();
+        cache.configure(
+            options.m_tileCacheMaxEntries.value_or(256),
+            options.m_tileCacheTtlMs.value_or(3600000)
+        );
+    }
+#endif
 };
 
 void MapGenerator::Render(std::tuple<double, double> center, int zoom) {
@@ -171,6 +185,35 @@ void MapGenerator::DownloadTiles() {
         downloadTile(tileDescriptor.get());
     }
 #else
+    auto& cache = TileCache::getGlobalInstance();
+
+    // Serve tiles from cache where possible
+    for (auto& td : m_tileDescriptors) {
+        auto cached = cache.get(td->m_url);
+        if (cached) {
+            td->m_data = malloc(cached->size());
+            if (td->m_data) {
+                memcpy(td->m_data, cached->data(), cached->size());
+                td->m_numBytes = static_cast<int>(cached->size());
+                td->m_success.emplace(true);
+                m_tileRequests[td->m_id].emplace(true);
+            }
+        }
+    }
+
+    // Check if all tiles were served from cache
+    bool allCached = std::all_of(
+        m_tileRequests.begin(), m_tileRequests.end(),
+        [](const auto& req) { return req.second.has_value(); }
+    );
+
+    if (allCached) {
+        DrawImage();
+        return;
+    }
+
+    // Download remaining tiles (cache.put() happens inside downloadTiles
+    // before MarkTileRequestFinished, while tile data is still alive)
     downloadTiles(m_tileDescriptors, m_tileRequestHeaders,
                   m_tileRequestTimeout, m_tileRequestLimit, m_tileRetryCount);
 #endif

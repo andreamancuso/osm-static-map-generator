@@ -98,6 +98,7 @@ set(SOURCE_FILES
     ${CPP_DIR}/shared.cpp
     ${CPP_DIR}/mapgenerator.cpp
     ${CPP_DIR}/tiledownloader.cpp
+    ${CPP_DIR}/tilecache.cpp
 )
 
 # ---- MSVC flags ----

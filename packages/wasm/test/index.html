@@ -18,14 +18,11 @@
     <img id="map-output" alt="Generated map will appear here">
 
     <script type="module">
-        import createModule from '../lib/osmStaticMapGenerator.mjs';
+        import { createMapGenerator } from '../lib/index.mjs';
 
         const statusEl = document.getElementById('status');
         const timingEl = document.getElementById('timing');
         const imgEl = document.getElementById('map-output');
-
-        let startRender;
-        let initTime;
 
         function setStatus(msg, type) {
             statusEl.textContent = msg;
@@ -36,49 +33,32 @@
             setStatus('Loading WASM module...');
             const startInit = performance.now();
 
-            const instance = await createModule({
-                eventHandlers: {
-                    onMapGeneratorJobDone: (dataPtr, numBytes) => {
-                        const elapsed = performance.now() - startRender;
-                        try {
-                            const data = new Uint8Array(instance.HEAPU8.buffer, dataPtr, numBytes);
-                            const pngCopy = new Uint8Array(data);
+            const { generateMap } = await createMapGenerator();
+            const initTime = performance.now() - startInit;
 
-                            const blob = new Blob([pngCopy], { type: 'image/png' });
-                            imgEl.src = URL.createObjectURL(blob);
-
-                            setStatus(
-                                `OK: ${numBytes} bytes, rendered in ${elapsed.toFixed(0)}ms`,
-                                'success'
-                            );
-                            timingEl.textContent =
-                                `Init: ${initTime.toFixed(0)}ms | Render: ${elapsed.toFixed(0)}ms`;
-                        } catch (e) {
-                            setStatus(`Error reading result: ${e.message}`, 'error');
-                        }
-                    },
-                    onMapGeneratorJobError: (errorMessage) => {
-                        setStatus(`Error: ${errorMessage}`, 'error');
-                    }
-                }
-            });
-
-            initTime = performance.now() - startInit;
             setStatus(`Module loaded in ${initTime.toFixed(0)}ms. Generating map...`);
+            const startRender = performance.now();
 
-            startRender = performance.now();
-            const jobId = instance.generateMap(JSON.stringify({
+            const result = await generateMap({
                 width: 800,
                 height: 600,
                 center: { x: -0.1276, y: 51.5074 },
                 zoom: 13
-            }));
+            });
 
-            if (jobId < 0) {
-                setStatus('generateMap() returned error (jobId < 0)', 'error');
-            }
+            const elapsed = performance.now() - startRender;
+            const blob = new Blob([result.buffer], { type: 'image/png' });
+            imgEl.src = URL.createObjectURL(blob);
+
+            setStatus(
+                `OK: ${result.buffer.length} bytes, rendered in ${elapsed.toFixed(0)}ms` +
+                (result.failedTileCount > 0 ? ` (${result.failedTileCount} tiles failed)` : ''),
+                'success'
+            );
+            timingEl.textContent =
+                `Init: ${initTime.toFixed(0)}ms | Render: ${elapsed.toFixed(0)}ms`;
         } catch (e) {
-            setStatus(`Fatal error: ${e.message}`, 'error');
+            setStatus(`Error: ${e.message}`, 'error');
             console.error(e);
         }
     </script>
