@@ -1,0 +1,11 @@
+{
+  "name": "osm-static-map-generator-native",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "nlohmann-json",
+    "libjpeg-turbo",
+    "libpng",
+    "tiff",
+    "curl"
+  ]
+}

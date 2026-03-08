@@ -6,6 +6,7 @@
 
 #include "tiledownloader.h"
 #include "shared.h"
+#include "mapgenerator.h"
 
 #ifdef __EMSCRIPTEN__
 void downloadTile(TileDescriptor* tileDescriptor) {
@@ -45,15 +46,23 @@ void downloadTile(TileDescriptor* tileDescriptor) {
     CURL *curl = curl_easy_init();
 
     if (curl) {
-        CURLcode res;
         curl_easy_setopt(curl, CURLOPT_URL, tileDescriptor->m_url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, [](void *buffer, size_t sz, size_t n, void *pThis) {
-            auto tileDescriptor = reinterpret_cast<TileDescriptor*>(pThis);
-            tileDescriptor->HandleSuccess(buffer, sz, n);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +[](void *buffer, size_t sz, size_t n, void *pThis) -> size_t {
+            size_t totalBytes = sz * n;
+            auto td = reinterpret_cast<TileDescriptor*>(pThis);
+            td->AppendData(buffer, totalBytes);
+            return totalBytes;
         });
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, tileDescriptor);
-        res = curl_easy_perform(curl);
+        CURLcode res = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
+
+        if (res == CURLE_OK) {
+            tileDescriptor->m_success.emplace(true);
+            tileDescriptor->m_mapGeneratorPtr->MarkTileRequestFinished(tileDescriptor->m_id, true);
+        } else {
+            tileDescriptor->HandleFailure();
+        }
     }
 }
 #endif

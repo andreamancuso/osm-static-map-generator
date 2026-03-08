@@ -18,6 +18,9 @@ build
 **/wasm/*.mjs
 **/wasm/*.wasm
 
+# Native addon build artifacts
+packages/native/build/
+
 # Logs
 logs
 *.log

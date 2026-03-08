@@ -83,20 +83,14 @@ void TileDescriptor::HandleFailure(emscripten_fetch_t *fetch) {
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
 };
 #else
-void TileDescriptor::HandleSuccess(void *buffer, size_t sz, size_t n) {
-    m_success.emplace(true);
-    m_numBytes = sz;
-    // m_status = fetch->status;
-
-    m_data = malloc(sz);
-    if (m_data == nullptr) {
-        // Handle memory allocation failure
-        m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
+void TileDescriptor::AppendData(void *buffer, size_t numBytes) {
+    void* newData = realloc(m_data, m_numBytes + numBytes);
+    if (newData == nullptr) {
         return;
     }
-    memcpy((void*)m_data, buffer, sz);
-
-    m_mapGeneratorPtr->MarkTileRequestFinished(m_id, true);
+    m_data = newData;
+    memcpy(static_cast<char*>(m_data) + m_numBytes, buffer, numBytes);
+    m_numBytes += static_cast<int>(numBytes);
 };
 
 void TileDescriptor::HandleFailure() {

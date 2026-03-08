@@ -76,13 +76,13 @@ struct TileDescriptor {
     std::optional<bool> m_success;
     unsigned short m_status;
 
-    void* m_data;
-    int m_numBytes;
-    PIX* m_rawPix;
+    void* m_data = nullptr;
+    int m_numBytes = 0;
+    PIX* m_rawPix = nullptr;
 
-    PIX* m_clippedPix;
-    int m_positionTop;
-    int m_positionLeft;
+    PIX* m_clippedPix = nullptr;
+    int m_positionTop = 0;
+    int m_positionLeft = 0;
 
     TileDescriptor(int id);
 
@@ -90,7 +90,7 @@ struct TileDescriptor {
     void HandleSuccess(emscripten_fetch_t *fetch);
     void HandleFailure(emscripten_fetch_t *fetch);
 #else
-    void HandleSuccess(void *buffer, size_t sz, size_t n);
+    void AppendData(void *buffer, size_t numBytes);
     void HandleFailure();
 #endif
 
