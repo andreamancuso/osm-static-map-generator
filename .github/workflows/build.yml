@@ -97,11 +97,16 @@ jobs:
       - name: Binary info
         shell: bash
         working-directory: packages/native
+        run: ls -lh build/Release/osm-static-map-generator.node
+
+      - name: Check dynamic deps
+        if: runner.os != 'Windows'
+        shell: bash
+        working-directory: packages/native
         run: |
-          ls -lh build/Release/osm-static-map-generator.node
           if command -v otool &>/dev/null; then
             otool -L build/Release/osm-static-map-generator.node
-          elif command -v ldd &>/dev/null; then
+          else
             ldd build/Release/osm-static-map-generator.node
           fi
 
