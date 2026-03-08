@@ -1,13 +1,11 @@
-'use strict';
-
-const createModule = require('./osmStaticMapGenerator.mjs');
+import createModule from './osmStaticMapGenerator.mjs';
 
 /**
  * Create a map generator instance with a promise-based API.
  *
  * @returns {Promise<{generateMap: function}>} Object with generateMap method
  */
-async function createMapGenerator() {
+export async function createMapGenerator() {
     const pendingJobs = new Map();
 
     const instance = await createModule({
@@ -83,4 +81,4 @@ async function createMapGenerator() {
     return { generateMap };
 }
 
-module.exports = { createMapGenerator, createModule };
+export { createModule };
