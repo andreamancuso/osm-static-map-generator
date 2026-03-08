@@ -1,6 +1,6 @@
 {
   "name": "osm-static-map-generator-wasm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "WebAssembly build of osm-static-map-generator for browser use",
   "main": "lib/index.js",
   "license": "MIT",
