@@ -19,4 +19,5 @@ private:
     Napi::Promise::Deferred m_deferred;
     std::string m_optionsJson;
     std::vector<uint8_t> m_pngData;
+    int m_failedTileCount = 0;
 };

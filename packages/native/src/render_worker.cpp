@@ -45,8 +45,10 @@ void RenderWorker::Execute() {
 
         generator.Render(std::make_tuple(centerX, centerY), zoom);
 
+        m_failedTileCount = generator.GetFailedTileCount();
+
         if (m_pngData.empty()) {
-            SetError("Render produced no output data");
+            SetError("Render failed: all tile downloads failed or partial render is disabled");
             return;
         }
     } catch (const nlohmann::json::exception& e) {
@@ -59,7 +61,12 @@ void RenderWorker::Execute() {
 void RenderWorker::OnOK() {
     Napi::Env env = Env();
     auto buffer = Napi::Buffer<uint8_t>::Copy(env, m_pngData.data(), m_pngData.size());
-    m_deferred.Resolve(buffer);
+
+    auto result = Napi::Object::New(env);
+    result.Set("buffer", buffer);
+    result.Set("failedTileCount", Napi::Number::New(env, m_failedTileCount));
+
+    m_deferred.Resolve(result);
 }
 
 void RenderWorker::OnError(const Napi::Error& error) {

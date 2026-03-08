@@ -75,6 +75,14 @@ m_tileRequests() {
         m_zoomRangeMax = options.m_zoomRangeMax.value();
     }
 
+    if (options.m_tileRetryCount.has_value()) {
+        m_tileRetryCount = options.m_tileRetryCount.value();
+    }
+
+    if (options.m_allowPartialRender.has_value()) {
+        m_allowPartialRender = options.m_allowPartialRender.value();
+    }
+
     m_tileRequestHeaders = options.m_tileRequestHeaders;
 };
 
@@ -164,7 +172,7 @@ void MapGenerator::DownloadTiles() {
     }
 #else
     downloadTiles(m_tileDescriptors, m_tileRequestHeaders,
-                  m_tileRequestTimeout, m_tileRequestLimit);
+                  m_tileRequestTimeout, m_tileRequestLimit, m_tileRetryCount);
 #endif
 };
 
@@ -178,13 +186,21 @@ void MapGenerator::MarkTileRequestFinished(int id, bool successOrFailure) {
 
     m_tileRequests[id].emplace(successOrFailure);
 
+    if (!successOrFailure) {
+        m_failedTileCount++;
+    }
+
     bool allFinished = std::all_of(
         m_tileRequests.begin(), m_tileRequests.end(),
         [](const auto& req) { return req.second.has_value(); }
     );
 
     if (allFinished) {
-        DrawImage();
+        if (!m_allowPartialRender && m_failedTileCount > 0) {
+            m_cb(nullptr, 0);
+        } else {
+            DrawImage();
+        }
     }
 };
 

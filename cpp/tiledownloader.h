@@ -14,6 +14,7 @@ void downloadTiles(
     const std::vector<std::unique_ptr<TileDescriptor>>& tileDescriptors,
     const std::unordered_map<std::string, std::string>& headers,
     int timeoutSeconds,
-    int maxConnections
+    int maxConnections,
+    int maxRetries
 );
 #endif

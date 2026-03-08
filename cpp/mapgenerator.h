@@ -44,6 +44,8 @@ struct MapGeneratorOptions {
     std::optional<int> m_tileRequestLimit;
     std::optional<int> m_zoomRangeMin;
     std::optional<int> m_zoomRangeMax;
+    std::optional<int> m_tileRetryCount;
+    std::optional<bool> m_allowPartialRender;
     std::unordered_map<std::string, std::string> m_tileRequestHeaders;
     std::optional<std::string> m_tileUrl;
     std::vector<TileServerConfig> m_tileLayers;
@@ -102,6 +104,14 @@ struct MapGeneratorOptions {
                 m_zoomRangeMin.emplace(options["zoomRange"]["min"].template get<int>());
                 m_zoomRangeMax.emplace(options["zoomRange"]["max"].template get<int>());
             }
+
+            if (options.contains("tileRetryCount") && options["tileRetryCount"].is_number_unsigned()) {
+                m_tileRetryCount.emplace(options["tileRetryCount"].template get<int>());
+            }
+
+            if (options.contains("allowPartialRender") && options["allowPartialRender"].is_boolean()) {
+                m_allowPartialRender.emplace(options["allowPartialRender"].template get<bool>());
+            }
         }
     }
 };
@@ -123,6 +133,9 @@ private:
     int m_tileSize = 256;
     int m_tileRequestTimeout = 0;
     int m_tileRequestLimit = 2;
+    int m_tileRetryCount = 3;
+    bool m_allowPartialRender = true;
+    int m_failedTileCount = 0;
     std::unordered_map<std::string, std::string> m_tileRequestHeaders;
     bool m_reverseY = false;
     int m_zoomRangeMin = 1;
@@ -153,4 +166,6 @@ public:
     void DrawImage();
 
     bool PrepareTile(TileDescriptor* tileDescriptor);
+
+    int GetFailedTileCount() const { return m_failedTileCount; }
 };

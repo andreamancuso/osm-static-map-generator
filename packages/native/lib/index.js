@@ -24,7 +24,9 @@ const addon = require('node-gyp-build')(path.join(__dirname, '..'));
  * @param {object} [options.zoomRange] - Zoom range constraints
  * @param {number} [options.zoomRange.min] - Minimum zoom level
  * @param {number} [options.zoomRange.max] - Maximum zoom level
- * @returns {Promise<Buffer>} PNG image data as a Node.js Buffer
+ * @param {number} [options.tileRetryCount] - Max retries per failed tile (default: 3)
+ * @param {boolean} [options.allowPartialRender] - If true (default), render even if some tiles fail. If false, reject when any tile fails.
+ * @returns {Promise<{buffer: Buffer, failedTileCount: number}>} Result with PNG buffer and count of failed tiles
  */
 async function generateMap(options) {
     if (!options || typeof options !== 'object') {

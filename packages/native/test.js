@@ -11,10 +11,10 @@ generateMap({
   tileRequestHeaders: {
     "User-Agent": "osm-static-map-generator/0.1.0 (smoke test)"
   }
-}).then(buf => {
+}).then(result => {
   const elapsed = Date.now() - start;
-  fs.writeFileSync('test-output.png', buf);
-  console.log(`OK: ${buf.length} bytes in ${elapsed}ms`);
+  fs.writeFileSync('test-output.png', result.buffer);
+  console.log(`OK: ${result.buffer.length} bytes in ${elapsed}ms, failedTileCount: ${result.failedTileCount}`);
 }).catch(err => {
   console.error('Failed:', err);
   process.exit(1);

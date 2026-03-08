@@ -93,9 +93,17 @@ void TileDescriptor::AppendData(void *buffer, size_t numBytes) {
     m_numBytes += static_cast<int>(numBytes);
 };
 
+void TileDescriptor::ResetData() {
+    if (m_data) {
+        free(m_data);
+        m_data = nullptr;
+    }
+    m_numBytes = 0;
+    m_success.reset();
+};
+
 void TileDescriptor::HandleFailure() {
     m_success.emplace(false);
-    // m_status = fetch->status;
 
     m_mapGeneratorPtr->MarkTileRequestFinished(m_id, false);
 };

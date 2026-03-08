@@ -91,6 +91,7 @@ struct TileDescriptor {
     void HandleFailure(emscripten_fetch_t *fetch);
 #else
     void AppendData(void *buffer, size_t numBytes);
+    void ResetData();
     void HandleFailure();
 #endif
 
