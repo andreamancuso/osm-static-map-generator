@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../../cpp/deps/vcpkg/scripts/buildsystems/vcpkg.cmake"
     CACHE STRING "vcpkg toolchain file")
 
+# Use overlay triplets to force static library linkage (self-contained .node prebuilds)
+set(VCPKG_OVERLAY_TRIPLETS "${CMAKE_CURRENT_SOURCE_DIR}/triplets" CACHE STRING "")
+
 # Auto-detect vcpkg triplet based on platform
 if(NOT DEFINED VCPKG_TARGET_TRIPLET)
     if(WIN32)
@@ -27,6 +30,12 @@ if(NOT DEFINED VCPKG_TARGET_TRIPLET)
             set(VCPKG_TARGET_TRIPLET "x64-linux")
         endif()
     endif()
+endif()
+
+# Ensure host triplet matches target on native builds (avoids vcpkg trying to
+# cross-detect an x64 compiler on arm64 runners, or vice-versa).
+if(NOT DEFINED VCPKG_HOST_TRIPLET)
+    set(VCPKG_HOST_TRIPLET "${VCPKG_TARGET_TRIPLET}")
 endif()
 
 project(osm-static-map-generator)
