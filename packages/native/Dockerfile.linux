@@ -1,0 +1,27 @@
+FROM node:22-bookworm
+RUN apt-get update -qq && \
+    apt-get install -y -qq cmake ninja-build g++ pkg-config curl zip unzip tar linux-libc-dev > /dev/null 2>&1 && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Copy only what the native build needs (not node_modules, .git, build dirs, etc.)
+COPY cpp/deps/vcpkg cpp/deps/vcpkg
+COPY cpp/deps/leptonica cpp/deps/leptonica
+COPY cpp/*.h cpp/*.cpp cpp/
+COPY packages/native/CMakeLists.txt packages/native/
+COPY packages/native/package.json packages/native/package-lock.json packages/native/
+COPY packages/native/src packages/native/src
+COPY packages/native/triplets packages/native/triplets
+COPY packages/native/exports.txt packages/native/
+COPY packages/native/lib packages/native/lib
+COPY packages/native/test.js packages/native/
+COPY packages/native/vcpkg.json packages/native/
+
+WORKDIR /src/packages/native
+RUN npm install --ignore-scripts
+RUN npx cmake-js compile
+
+CMD ls -lh build/Release/osm-static-map-generator.node && \
+    file build/Release/osm-static-map-generator.node && \
+    node test.js

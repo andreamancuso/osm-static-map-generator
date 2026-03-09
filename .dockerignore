@@ -1,0 +1,24 @@
+# Only send what the native Linux build needs
+*
+
+!cpp/deps/vcpkg/**
+!cpp/deps/leptonica/**
+!cpp/*.h
+!cpp/*.cpp
+!packages/native/CMakeLists.txt
+!packages/native/package.json
+!packages/native/package-lock.json
+!packages/native/src/**
+!packages/native/triplets/**
+!packages/native/exports.txt
+!packages/native/lib/**
+!packages/native/test.js
+!packages/native/vcpkg.json
+
+# Exclude build artifacts that snuck in
+cpp/deps/vcpkg/buildtrees
+cpp/deps/vcpkg/installed
+cpp/deps/vcpkg/packages
+cpp/deps/vcpkg/downloads
+packages/native/build
+packages/native/node_modules

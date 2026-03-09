@@ -81,7 +81,10 @@ else()
         -w -ffunction-sections -fdata-sections
         "$<$<CONFIG:Release>:-Os>"
     )
-    set_target_properties(leptonica_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(leptonica_lib PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
+        C_VISIBILITY_PRESET hidden
+    )
 endif()
 
 # ---- Find vcpkg packages ----
@@ -117,13 +120,16 @@ add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     PREFIX "" SUFFIX ".node"
     CXX_VISIBILITY_PRESET hidden
+    C_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN ON
 )
 if(NOT MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE -ffunction-sections -fdata-sections)
     target_link_options(${PROJECT_NAME} PRIVATE
         "$<$<PLATFORM_ID:Linux>:-Wl,--gc-sections>"
+        "$<$<PLATFORM_ID:Linux>:-Wl,--exclude-libs,ALL>"
         "$<$<PLATFORM_ID:Darwin>:-Wl,-dead_strip>"
+        "$<$<PLATFORM_ID:Darwin>:-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/exports.txt>"
     )
 endif()
 
@@ -150,18 +156,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CPP_DIR}
     ${DEPS}/leptonica/src
 )
-
-# ---- Link-Time Optimization (non-MSVC Release builds) ----
-# Uses CMAKE_INTERPROCEDURAL_OPTIMIZATION which correctly configures gcc-ar/llvm-ar
-# for static library archiving (manual -flto flags don't handle this).
-if(NOT MSVC)
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT ipo_supported)
-    if(ipo_supported)
-        set_target_properties(leptonica_lib PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-        set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-    endif()
-endif()
 
 # ---- N-API version ----
 add_definitions(-DNAPI_VERSION=9)

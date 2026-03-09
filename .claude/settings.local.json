@@ -5,7 +5,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:emscripten.org)",
       "WebFetch(domain:cocalc.com)",
-      "WebFetch(domain:gist.github.com)"
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:tetzank.github.io)"
     ]
   }
 }
