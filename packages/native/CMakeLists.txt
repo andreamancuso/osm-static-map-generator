@@ -80,7 +80,6 @@ else()
     target_compile_options(leptonica_lib PRIVATE
         -w -ffunction-sections -fdata-sections
         "$<$<CONFIG:Release>:-Os>"
-        "$<$<CONFIG:Release>:-flto=auto>"
     )
     set_target_properties(leptonica_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -110,8 +109,7 @@ if(MSVC)
     add_compile_options(/bigobj /MP)
 endif()
 if(NOT MSVC)
-    add_compile_options("$<$<CONFIG:Release>:-flto=auto>")
-    add_link_options("$<$<CONFIG:Release>:-s>" "$<$<CONFIG:Release>:-flto=auto>")
+    add_link_options("$<$<CONFIG:Release>:-s>")
 endif()
 
 # ---- Addon shared library ----
@@ -152,6 +150,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CPP_DIR}
     ${DEPS}/leptonica/src
 )
+
+# ---- Link-Time Optimization (non-MSVC Release builds) ----
+# Uses CMAKE_INTERPROCEDURAL_OPTIMIZATION which correctly configures gcc-ar/llvm-ar
+# for static library archiving (manual -flto flags don't handle this).
+if(NOT MSVC)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported)
+    if(ipo_supported)
+        set_target_properties(leptonica_lib PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+        set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
+endif()
 
 # ---- N-API version ----
 add_definitions(-DNAPI_VERSION=9)

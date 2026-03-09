@@ -313,7 +313,7 @@ void MapGenerator::DrawImage() {
     l_uint8* data;
     size_t size;
 
-    pixWriteMem(&data, &size, texturePix, IFF_PNG);
+    pixWriteMemPng(&data, &size, texturePix, 0.0);
     
     m_cb(data, size);
 
