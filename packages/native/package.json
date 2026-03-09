@@ -1,6 +1,6 @@
 {
   "name": "osm-static-map-generator",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Native Node.js addon for generating static map images from OpenStreetMap tiles",
   "main": "lib/index.js",
   "license": "MIT",

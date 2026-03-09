@@ -81,6 +81,15 @@ Output: `cpp/build/osmStaticMapGenerator.lib`
 
 vcpkg (included as a submodule) automatically downloads and builds the native dependencies: nlohmann-json, libjpeg-turbo, libpng, tiff, and curl.
 
+### Native build (x64 Linux via Docker)
+
+```bash
+docker build -f packages/native/Dockerfile.linux -t native-linux-test .
+docker run --rm native-linux-test
+```
+
+Uses `packages/native/Dockerfile.linux` (based on `node:22-bookworm` with CMake, Ninja, and GCC). Compiles the native addon inside the container and runs the smoke test. Output: `build/Release/osm-static-map-generator.node`.
+
 ## Usage (Node.js)
 
 ```js
