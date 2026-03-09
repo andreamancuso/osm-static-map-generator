@@ -101,5 +101,6 @@
     "expected": "cpp",
     "pix_internal.h": "c",
     "allheaders.h": "c"
-  }
+  },
+  "sarif-viewer.connectToGithubCodeScanning": "off"
 }

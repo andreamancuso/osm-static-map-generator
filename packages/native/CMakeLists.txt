@@ -77,7 +77,11 @@ target_include_directories(leptonica_lib PRIVATE ${DEPS}/leptonica/src)
 if(MSVC)
     target_compile_options(leptonica_lib PRIVATE /W0)
 else()
-    target_compile_options(leptonica_lib PRIVATE -w)
+    target_compile_options(leptonica_lib PRIVATE
+        -w -ffunction-sections -fdata-sections
+        "$<$<CONFIG:Release>:-Os>"
+        "$<$<CONFIG:Release>:-flto=auto>"
+    )
     set_target_properties(leptonica_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
@@ -106,7 +110,8 @@ if(MSVC)
     add_compile_options(/bigobj /MP)
 endif()
 if(NOT MSVC)
-    add_link_options("$<$<CONFIG:Release>:-s>")
+    add_compile_options("$<$<CONFIG:Release>:-flto=auto>")
+    add_link_options("$<$<CONFIG:Release>:-s>" "$<$<CONFIG:Release>:-flto=auto>")
 endif()
 
 # ---- Addon shared library ----
@@ -118,7 +123,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 if(NOT MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE -ffunction-sections -fdata-sections)
-    target_link_options(${PROJECT_NAME} PRIVATE "$<$<PLATFORM_ID:Linux>:-Wl,--gc-sections>")
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "$<$<PLATFORM_ID:Linux>:-Wl,--gc-sections>"
+        "$<$<PLATFORM_ID:Darwin>:-Wl,-dead_strip>"
+    )
 endif()
 
 target_link_libraries(${PROJECT_NAME}
