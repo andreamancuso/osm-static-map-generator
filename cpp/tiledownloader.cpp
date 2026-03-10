@@ -12,6 +12,100 @@
 #include "tilecache.h"
 #endif
 
+// --- Decoupled single-tile fetch API ---
+
+#ifdef __EMSCRIPTEN__
+void fetchTile(
+    const std::string& url,
+    const std::unordered_map<std::string, std::string>& headers,
+    TileFetchCallback callback
+) {
+    auto* cb = new TileFetchCallback(std::move(callback));
+
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.userData = cb;
+
+    attr.onsuccess = [](emscripten_fetch_t* fetch) {
+        auto* cb = reinterpret_cast<TileFetchCallback*>(fetch->userData);
+        std::vector<uint8_t> data(fetch->data, fetch->data + fetch->numBytes);
+        (*cb)(true, std::move(data));
+        delete cb;
+        emscripten_fetch_close(fetch);
+    };
+
+    attr.onerror = [](emscripten_fetch_t* fetch) {
+        auto* cb = reinterpret_cast<TileFetchCallback*>(fetch->userData);
+        (*cb)(false, {});
+        delete cb;
+        emscripten_fetch_close(fetch);
+    };
+
+    emscripten_fetch(&attr, url.c_str());
+}
+#else
+static size_t fetchTileWriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+    auto* buffer = static_cast<std::vector<uint8_t>*>(userp);
+    size_t totalSize = size * nmemb;
+    buffer->insert(buffer->end(),
+        static_cast<uint8_t*>(contents),
+        static_cast<uint8_t*>(contents) + totalSize
+    );
+    return totalSize;
+}
+
+void fetchTile(
+    const std::string& url,
+    const std::unordered_map<std::string, std::string>& headers,
+    TileFetchCallback callback
+) {
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        callback(false, {});
+        return;
+    }
+
+    std::vector<uint8_t> buffer;
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fetchTileWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+
+    struct curl_slist* headerList = nullptr;
+    for (const auto& [key, value] : headers) {
+        std::string header = key + ": " + value;
+        headerList = curl_slist_append(headerList, header.c_str());
+    }
+    if (headerList) {
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
+    }
+
+    CURLcode res = curl_easy_perform(curl);
+
+    bool success = false;
+    if (res == CURLE_OK) {
+        long httpCode = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        success = (httpCode == 200);
+    }
+
+    if (!success) {
+        buffer.clear();
+    }
+
+    if (headerList) curl_slist_free_all(headerList);
+    curl_easy_cleanup(curl);
+
+    callback(success, std::move(buffer));
+}
+#endif
+
+// --- Legacy MapGenerator-coupled tile download API ---
+
 #ifdef __EMSCRIPTEN__
 void downloadTile(TileDescriptor* tileDescriptor) {
     emscripten_fetch_attr_t attr;
